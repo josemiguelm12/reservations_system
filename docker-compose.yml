@@ -1,0 +1,66 @@
+version: '3.8'
+
+services:
+  # ─── PostgreSQL ───
+  postgres:
+    image: postgres:16-alpine
+    container_name: reservaspro-db
+    restart: unless-stopped
+    ports:
+      - '5432:5432'
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: reservations
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U postgres']
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # ─── NestJS Backend ───
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: reservaspro-api
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/reservations?schema=public
+      JWT_SECRET: super-secret-jwt-key-change-in-production
+      JWT_REFRESH_SECRET: super-secret-refresh-key-change-in-production
+      JWT_EXPIRATION: 15m
+      JWT_REFRESH_EXPIRATION: 7d
+      STRIPE_SECRET_KEY: sk_test_placeholder
+      STRIPE_WEBHOOK_SECRET: whsec_placeholder
+      SMTP_HOST: smtp.ethereal.email
+      SMTP_PORT: 587
+      SMTP_USER: ''
+      SMTP_PASS: ''
+      FRONTEND_URL: http://localhost:3000
+      PORT: 3001
+    ports:
+      - '3001:3001'
+
+  # ─── Next.js Frontend ───
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: reservaspro-web
+    restart: unless-stopped
+    depends_on:
+      - backend
+    environment:
+      NEXT_PUBLIC_API_URL: http://localhost:3001
+      NEXT_PUBLIC_APP_NAME: ReservasPro
+    ports:
+      - '3000:3000'
+
+volumes:
+  pgdata:

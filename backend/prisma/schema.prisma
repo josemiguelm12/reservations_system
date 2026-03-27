@@ -1,0 +1,162 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─── Enums ──────────────────────────────────────────────
+
+enum UserRole {
+  ADMIN
+  USER
+  CLIENT
+}
+
+enum ResourceType {
+  COURT
+  ROOM
+  TABLE
+  DESK
+  EQUIPMENT
+  OTHER
+}
+
+enum ReservationStatus {
+  PENDING
+  CONFIRMED
+  CANCELLED
+  COMPLETED
+}
+
+enum PaymentStatus {
+  PENDING
+  COMPLETED
+  FAILED
+  REFUNDED
+}
+
+enum DayOfWeek {
+  MONDAY
+  TUESDAY
+  WEDNESDAY
+  THURSDAY
+  FRIDAY
+  SATURDAY
+  SUNDAY
+}
+
+// ─── Models ─────────────────────────────────────────────
+
+model User {
+  id            String   @id @default(uuid())
+  email         String   @unique
+  password      String
+  fullName      String
+  role          UserRole @default(CLIENT)
+  refreshToken  String?  // Hashed refresh token
+  isActive      Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  reservations  Reservation[]
+  payments      Payment[]
+
+  @@index([email])
+  @@index([role])
+  @@map("users")
+}
+
+model Resource {
+  id            String       @id @default(uuid())
+  name          String
+  description   String?
+  type          ResourceType
+  capacity      Int
+  pricePerHour  Float
+  imageUrl      String?
+  isActive      Boolean      @default(true)
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+
+  schedules     Schedule[]
+  reservations  Reservation[]
+
+  @@index([type])
+  @@index([isActive])
+  @@map("resources")
+}
+
+model Schedule {
+  id          String    @id @default(uuid())
+  resourceId  String
+  dayOfWeek   DayOfWeek
+  startTime   String    // "HH:mm" format
+  endTime     String    // "HH:mm" format
+  isActive    Boolean   @default(true)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  resource    Resource  @relation(fields: [resourceId], references: [id], onDelete: Cascade)
+
+  @@index([resourceId, dayOfWeek])
+  @@map("schedules")
+}
+
+model ScheduleException {
+  id          String   @id @default(uuid())
+  resourceId  String
+  date        DateTime // Specific date that is blocked
+  reason      String?
+  createdAt   DateTime @default(now())
+
+  @@index([resourceId, date])
+  @@map("schedule_exceptions")
+}
+
+model Reservation {
+  id          String            @id @default(uuid())
+  userId      String
+  resourceId  String
+  startTime   DateTime
+  endTime     DateTime
+  status      ReservationStatus @default(PENDING)
+  totalAmount Float
+  notes       String?
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+
+  user        User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  resource    Resource          @relation(fields: [resourceId], references: [id], onDelete: Cascade)
+  payment     Payment?
+
+  // Critical index for availability/conflict detection
+  @@index([resourceId, startTime, endTime])
+  @@index([userId])
+  @@index([status])
+  @@index([resourceId, status])
+  @@map("reservations")
+}
+
+model Payment {
+  id              String        @id @default(uuid())
+  reservationId   String        @unique
+  userId          String
+  amount          Float
+  currency        String        @default("usd")
+  status          PaymentStatus @default(PENDING)
+  stripePaymentId String?       @unique
+  stripeClientSecret String?
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  reservation     Reservation   @relation(fields: [reservationId], references: [id], onDelete: Cascade)
+  user            User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([status])
+  @@index([stripePaymentId])
+  @@map("payments")
+}
