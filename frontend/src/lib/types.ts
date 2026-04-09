@@ -1,5 +1,17 @@
 // ─── User Types ──────────────────────────────────────────
-export type UserRole = 'ADMIN' | 'USER' | 'CLIENT';
+export type UserRole = 'ADMIN' | 'PARTNER' | 'CLIENT';
+
+export interface PartnerProfile {
+  id: string;
+  userId: string;
+  businessName: string;
+  description?: string;
+  logoUrl?: string;
+  phone?: string;
+  address?: string;
+  isVerified: boolean;
+  createdAt: string;
+}
 
 export interface User {
   id: string;
@@ -9,6 +21,7 @@ export interface User {
   isActive: boolean;
   createdAt: string;
   updatedAt?: string;
+  partnerProfile?: PartnerProfile;
 }
 
 export interface AuthResponse {
@@ -29,10 +42,15 @@ export interface Resource {
   imageUrl?: string;
   location?: string;
   amenities?: string[];
+  ownerId?: string;
+  owner?: Pick<User, 'id' | 'fullName'> & { partnerProfile?: PartnerProfile };
   isActive: boolean;
   createdAt: string;
   schedules?: Schedule[];
-  _count?: { reservations: number };
+  reviews?: Review[];
+  avgRating?: number;
+  reviewCount?: number;
+  _count?: { reservations: number; reviews: number };
 }
 
 // ─── Schedule Types ──────────────────────────────────────
@@ -84,6 +102,18 @@ export interface Payment {
   status: PaymentStatus;
   stripePaymentId?: string;
   createdAt: string;
+}
+
+// ─── Review Types ────────────────────────────────────────
+export interface Review {
+  id: string;
+  resourceId: string;
+  userId: string;
+  rating: number;
+  comment?: string;
+  createdAt: string;
+  user?: Pick<User, 'id' | 'fullName'>;
+  resource?: Pick<Resource, 'id' | 'name'>;
 }
 
 // ─── Stats Types ─────────────────────────────────────────

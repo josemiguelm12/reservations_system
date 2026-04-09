@@ -9,6 +9,7 @@ import type {
   AvailabilityCheck,
   TimeSlot,
   User,
+  Review,
 } from '@/lib/types';
 
 /* ═══════════════════════════════════
@@ -397,5 +398,20 @@ export function useDeleteSchedule() {
     onError: (err: any) => {
       toast.error(err.response?.data?.message || 'Error al eliminar horario');
     },
+  });
+}
+
+/* ═══════════════════════════════════
+   REVIEWS (Public)
+   ═══════════════════════════════════ */
+
+export function useResourceReviews(resourceId: string, page = 1) {
+  return useQuery<{ reviews: Review[]; avgRating: number; total: number }>({
+    queryKey: ['reviews', resourceId, page],
+    queryFn: async () => {
+      const { data } = await api.get(`/reviews/resource/${resourceId}?page=${page}&limit=10`);
+      return data;
+    },
+    enabled: !!resourceId,
   });
 }

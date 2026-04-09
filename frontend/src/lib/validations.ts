@@ -7,15 +7,27 @@ export const loginSchema = z.object({
 });
 
 export const registerSchema = z.object({
-  email: z.string().email('Invalid email address'),
+  email: z.string().email('Email inválido'),
   password: z
     .string()
-    .min(8, 'Password must be at least 8 characters')
-    .max(128, 'Password too long'),
+    .min(8, 'La contraseña debe tener al menos 8 caracteres')
+    .max(128, 'Contraseña muy larga'),
   fullName: z
     .string()
-    .min(2, 'Name must be at least 2 characters')
-    .max(100, 'Name too long'),
+    .min(2, 'El nombre debe tener al menos 2 caracteres')
+    .max(100, 'Nombre muy largo'),
+  confirmPassword: z.string(),
+  role: z.enum(['CLIENT', 'PARTNER']).default('CLIENT'),
+  businessName: z.string().max(200).optional(),
+  businessDescription: z.string().max(1000).optional(),
+  phone: z.string().max(30).optional(),
+  address: z.string().max(300).optional(),
+}).refine((data) => data.password === data.confirmPassword, {
+  message: 'Las contraseñas no coinciden',
+  path: ['confirmPassword'],
+}).refine((data) => data.role !== 'PARTNER' || (data.businessName && data.businessName.length >= 2), {
+  message: 'El nombre del negocio es requerido para socios',
+  path: ['businessName'],
 });
 
 // ─── Resource Schemas ────────────────────────────────────

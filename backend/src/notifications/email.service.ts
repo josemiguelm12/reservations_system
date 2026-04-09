@@ -18,17 +18,22 @@ export class EmailService implements OnModuleInit {
 
     if (!user || !pass) {
       // Create Ethereal test account for development
-      const testAccount = await nodemailer.createTestAccount();
-      this.transporter = nodemailer.createTransport({
-        host: 'smtp.ethereal.email',
-        port: 587,
-        secure: false,
-        auth: {
-          user: testAccount.user,
-          pass: testAccount.pass,
-        },
-      });
-      this.logger.log(`📧 Using Ethereal test email: ${testAccount.user}`);
+      try {
+        const testAccount = await nodemailer.createTestAccount();
+        this.transporter = nodemailer.createTransport({
+          host: 'smtp.ethereal.email',
+          port: 587,
+          secure: false,
+          auth: {
+            user: testAccount.user,
+            pass: testAccount.pass,
+          },
+        });
+        this.logger.log(`📧 Using Ethereal test email: ${testAccount.user}`);
+      } catch {
+        this.logger.warn('⚠️ Could not create Ethereal account — emails disabled');
+        this.transporter = nodemailer.createTransport({ jsonTransport: true });
+      }
     } else {
       this.transporter = nodemailer.createTransport({
         host,

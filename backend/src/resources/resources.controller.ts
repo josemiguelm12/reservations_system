@@ -15,7 +15,7 @@ import { ApiTags, ApiOperation, ApiBearerAuth, ApiQuery } from '@nestjs/swagger'
 import { UserRole } from '@prisma/client';
 import { ResourcesService } from './resources.service';
 import { CreateResourceDto, UpdateResourceDto, ResourceFilterDto } from './dto';
-import { Roles } from '../common/decorators';
+import { Roles, CurrentUser } from '../common/decorators';
 import { RolesGuard } from '../common/guards';
 
 @ApiTags('resources')
@@ -25,11 +25,14 @@ export class ResourcesController {
 
   @Post()
   @UseGuards(AuthGuard('jwt'), RolesGuard)
-  @Roles(UserRole.ADMIN)
+  @Roles(UserRole.PARTNER, UserRole.ADMIN)
   @ApiBearerAuth()
-  @ApiOperation({ summary: 'Create a new resource (Admin only)' })
-  create(@Body() dto: CreateResourceDto) {
-    return this.resourcesService.create(dto);
+  @ApiOperation({ summary: 'Create a new resource (Partner/Admin)' })
+  create(
+    @Body() dto: CreateResourceDto,
+    @CurrentUser() user: any,
+  ) {
+    return this.resourcesService.create(dto, user);
   }
 
   @Get()
@@ -47,6 +50,22 @@ export class ResourcesController {
     return this.resourcesService.findAll(filters, page, limit);
   }
 
+  @Get('my')
+  @UseGuards(AuthGuard('jwt'), RolesGuard)
+  @Roles(UserRole.PARTNER)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Get my resources (Partner only)' })
+  @ApiQuery({ name: 'page', required: false, type: Number })
+  @ApiQuery({ name: 'limit', required: false, type: Number })
+  findMyResources(
+    @CurrentUser('id') userId: string,
+    @Query() filters: ResourceFilterDto,
+  ) {
+    const page = filters.page || 1;
+    const limit = filters.limit || 10;
+    return this.resourcesService.findByOwner(userId, filters, page, limit);
+  }
+
   @Get(':id')
   @ApiOperation({ summary: 'Get resource by ID (public)' })
   findOne(@Param('id', ParseUUIDPipe) id: string) {
@@ -55,22 +74,26 @@ export class ResourcesController {
 
   @Patch(':id')
   @UseGuards(AuthGuard('jwt'), RolesGuard)
-  @Roles(UserRole.ADMIN)
+  @Roles(UserRole.PARTNER, UserRole.ADMIN)
   @ApiBearerAuth()
-  @ApiOperation({ summary: 'Update resource (Admin only)' })
+  @ApiOperation({ summary: 'Update resource (Owner/Admin)' })
   update(
     @Param('id', ParseUUIDPipe) id: string,
     @Body() dto: UpdateResourceDto,
+    @CurrentUser() user: any,
   ) {
-    return this.resourcesService.update(id, dto);
+    return this.resourcesService.update(id, dto, user);
   }
 
   @Delete(':id')
   @UseGuards(AuthGuard('jwt'), RolesGuard)
-  @Roles(UserRole.ADMIN)
+  @Roles(UserRole.PARTNER, UserRole.ADMIN)
   @ApiBearerAuth()
-  @ApiOperation({ summary: 'Delete resource (Admin only)' })
-  remove(@Param('id', ParseUUIDPipe) id: string) {
-    return this.resourcesService.remove(id);
+  @ApiOperation({ summary: 'Delete resource (Owner/Admin)' })
+  remove(
+    @Param('id', ParseUUIDPipe) id: string,
+    @CurrentUser() user: any,
+  ) {
+    return this.resourcesService.remove(id, user);
   }
 }

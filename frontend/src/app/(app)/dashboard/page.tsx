@@ -7,7 +7,7 @@ import { Card, CardBody, CardHeader } from '@/components/ui/card';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { formatCurrency } from '@/lib/utils';
 import { useRouter } from 'next/navigation';
-import { FiCalendar, FiDollarSign, FiBox, FiUsers, FiArrowRight } from 'react-icons/fi';
+import { CalendarDaysIcon, CurrencyDollarIcon, ArchiveBoxIcon, UserGroupIcon, ArrowRightIcon } from '@heroicons/react/24/outline';
 import Link from 'next/link';
 import { useEffect } from 'react';
 
@@ -67,7 +67,7 @@ function DashboardContent({ user, isAdmin }: { user: any; isAdmin: boolean }) {
       {isAdmin && stats && (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           <StatCard
-            icon={<FiCalendar className="h-5 w-5" />}
+            icon={<CalendarDaysIcon className="h-5 w-5" />}
             label="Total Reservas"
             value={String(stats.totalReservations)}
             sub={`${stats.pendingReservations} pendientes`}
@@ -75,7 +75,7 @@ function DashboardContent({ user, isAdmin }: { user: any; isAdmin: boolean }) {
             bg="bg-[var(--primary-light)]"
           />
           <StatCard
-            icon={<FiDollarSign className="h-5 w-5" />}
+            icon={<CurrencyDollarIcon className="h-5 w-5" />}
             label="Ingresos Totales"
             value={formatCurrency(stats.totalRevenue)}
             sub={`${formatCurrency(stats.monthlyRevenue)} este mes`}
@@ -83,7 +83,7 @@ function DashboardContent({ user, isAdmin }: { user: any; isAdmin: boolean }) {
             bg="bg-emerald-50"
           />
           <StatCard
-            icon={<FiBox className="h-5 w-5" />}
+            icon={<ArchiveBoxIcon className="h-5 w-5" />}
             label="Recursos"
             value={String(stats.totalResources)}
             sub={`${stats.activeResources} activos`}
@@ -91,7 +91,7 @@ function DashboardContent({ user, isAdmin }: { user: any; isAdmin: boolean }) {
             bg="bg-violet-50"
           />
           <StatCard
-            icon={<FiUsers className="h-5 w-5" />}
+            icon={<UserGroupIcon className="h-5 w-5" />}
             label="Usuarios"
             value={String(stats.totalUsers)}
             sub="registrados"
@@ -115,7 +115,7 @@ function DashboardContent({ user, isAdmin }: { user: any; isAdmin: boolean }) {
             className="flex items-center gap-1.5 text-sm font-medium text-[var(--primary)] hover:text-[var(--primary-hover)] transition-colors"
           >
             View Calendar
-            <FiArrowRight className="h-4 w-4" />
+            <ArrowRightIcon className="h-4 w-4" />
           </Link>
         </div>
 

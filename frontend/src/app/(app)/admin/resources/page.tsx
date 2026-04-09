@@ -10,7 +10,7 @@ import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { Badge } from '@/components/ui/badge';
 import { Pagination } from '@/components/ui/empty-and-pagination';
 import { formatCurrency, getResourceTypeLabel } from '@/lib/utils';
-import { FiPlus, FiEdit2, FiTrash2 } from 'react-icons/fi';
+import { PlusIcon, PencilSquareIcon, TrashIcon } from '@heroicons/react/24/outline';
 import type { Resource } from '@/lib/types';
 
 const typeOptions = [
@@ -104,7 +104,7 @@ export default function AdminResourcesPage() {
           <p className="text-[var(--text-secondary)] mt-1">Administra los recursos del sistema</p>
         </div>
         <Button onClick={openCreate}>
-          <FiPlus className="h-4 w-4" />
+          <PlusIcon className="h-4 w-4" />
           Nuevo Recurso
         </Button>
       </div>
@@ -166,13 +166,13 @@ export default function AdminResourcesPage() {
                             onClick={() => openEdit(resource)}
                             className="p-1.5 rounded-md hover:bg-[var(--bg-tertiary)] text-[var(--text-secondary)] transition-colors cursor-pointer"
                           >
-                            <FiEdit2 className="h-4 w-4" />
+                            <PencilSquareIcon className="h-4 w-4" />
                           </button>
                           <button
                             onClick={() => setDeleteId(resource.id)}
                             className="p-1.5 rounded-md hover:bg-red-50 dark:hover:bg-red-900/20 text-[var(--danger)] transition-colors cursor-pointer"
                           >
-                            <FiTrash2 className="h-4 w-4" />
+                            <TrashIcon className="h-4 w-4" />
                           </button>
                         </div>
                       </td>

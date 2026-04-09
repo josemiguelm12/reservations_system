@@ -11,7 +11,7 @@ import { EmptyState, Pagination } from '@/components/ui/empty-and-pagination';
 import { StatusBadge } from '@/components/ui/badge';
 import { Modal } from '@/components/ui/modal';
 import { formatCurrency } from '@/lib/utils';
-import { FiCalendar, FiClock, FiX } from 'react-icons/fi';
+import { CalendarDaysIcon, ClockIcon, XMarkIcon } from '@heroicons/react/24/outline';
 import Link from 'next/link';
 
 const statusOptions = [
@@ -75,7 +75,7 @@ export default function ReservationsPage() {
         </div>
       ) : data?.data.length === 0 ? (
         <EmptyState
-          icon={<FiCalendar className="h-12 w-12" />}
+          icon={<CalendarDaysIcon className="h-12 w-12" />}
           title="No tienes reservas"
           description="Explora nuestros recursos y realiza tu primera reserva"
           action={
@@ -114,7 +114,7 @@ export default function ReservationsPage() {
                   {/* Date & Time */}
                   <div className="flex items-center gap-3 text-sm text-[var(--muted-foreground)]">
                     <span className="flex items-center gap-1">
-                      <FiCalendar className="h-3.5 w-3.5" />
+                      <CalendarDaysIcon className="h-3.5 w-3.5" />
                       {new Date(reservation.startTime).toLocaleDateString('es-ES', {
                         day: 'numeric',
                         month: 'short',
@@ -122,7 +122,7 @@ export default function ReservationsPage() {
                       })}
                     </span>
                     <span className="flex items-center gap-1 text-xs">
-                      <FiClock className="h-3 w-3" />
+                      <ClockIcon className="h-3 w-3" />
                       {new Date(reservation.startTime).toLocaleTimeString('es-ES', {
                         hour: '2-digit',
                         minute: '2-digit',
@@ -158,7 +158,7 @@ export default function ReservationsPage() {
                           setCancelId(reservation.id);
                         }}
                       >
-                        <FiX className="h-4 w-4" />
+                        <XMarkIcon className="h-4 w-4" />
                         Cancel
                       </Button>
                     )}

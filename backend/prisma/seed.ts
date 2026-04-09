@@ -7,11 +7,13 @@ async function main() {
   console.log('🌱 Seeding database...');
 
   // Clean existing data
+  await prisma.review.deleteMany();
   await prisma.payment.deleteMany();
   await prisma.reservation.deleteMany();
   await prisma.scheduleException.deleteMany();
   await prisma.schedule.deleteMany();
   await prisma.resource.deleteMany();
+  await prisma.partnerProfile.deleteMany();
   await prisma.user.deleteMany();
 
   // ─── Users ────────────────────────────────────────────
@@ -27,16 +29,63 @@ async function main() {
     },
   });
 
-  const user1 = await prisma.user.create({
+  // Partners (socios que ofrecen espacios)
+  const partner1 = await prisma.user.create({
     data: {
-      email: 'john@example.com',
+      email: 'carlos@sportcenter.com',
       password: userPassword,
-      fullName: 'John Doe',
-      role: UserRole.USER,
+      fullName: 'Carlos Méndez',
+      role: UserRole.PARTNER,
+      partnerProfile: {
+        create: {
+          businessName: 'Sport Center RD',
+          description: 'Centro deportivo premium con canchas de tenis, basketball y más.',
+          phone: '809-555-0101',
+          address: 'Av. Winston Churchill #45, Santo Domingo',
+          isVerified: true,
+        },
+      },
     },
   });
 
-  const user2 = await prisma.user.create({
+  const partner2 = await prisma.user.create({
+    data: {
+      email: 'maria@coworkplus.com',
+      password: userPassword,
+      fullName: 'María García',
+      role: UserRole.PARTNER,
+      partnerProfile: {
+        create: {
+          businessName: 'CoWork Plus',
+          description: 'Espacios de coworking y salas de reuniones para profesionales.',
+          phone: '809-555-0202',
+          address: 'Torre Empresarial, Piantini, Santo Domingo',
+          isVerified: true,
+        },
+      },
+    },
+  });
+
+  const partner3 = await prisma.user.create({
+    data: {
+      email: 'pedro@eventoshall.com',
+      password: userPassword,
+      fullName: 'Pedro Ramos',
+      role: UserRole.PARTNER,
+      partnerProfile: {
+        create: {
+          businessName: 'Eventos Hall RD',
+          description: 'Salones y equipos para eventos corporativos y celebraciones.',
+          phone: '809-555-0303',
+          address: 'Plaza Central, Santiago',
+          isVerified: false,
+        },
+      },
+    },
+  });
+
+  // Clients
+  const client1 = await prisma.user.create({
     data: {
       email: 'jane@example.com',
       password: userPassword,
@@ -45,7 +94,7 @@ async function main() {
     },
   });
 
-  const user3 = await prisma.user.create({
+  const client2 = await prisma.user.create({
     data: {
       email: 'bob@example.com',
       password: userPassword,
@@ -54,9 +103,19 @@ async function main() {
     },
   });
 
-  console.log('✅ Users created');
+  const client3 = await prisma.user.create({
+    data: {
+      email: 'ana@example.com',
+      password: userPassword,
+      fullName: 'Ana Martínez',
+      role: UserRole.CLIENT,
+    },
+  });
 
-  // ─── Resources ────────────────────────────────────────
+  console.log('✅ Users & partner profiles created');
+
+  // ─── Resources (cada uno pertenece a un partner) ─────
+  // Partner 1: Sport Center RD
   const tennisCourt = await prisma.resource.create({
     data: {
       name: 'Tennis Court A',
@@ -65,6 +124,7 @@ async function main() {
       capacity: 4,
       pricePerHour: 35.00,
       imageUrl: 'https://images.unsplash.com/photo-1554068865-24cecd4e34b8?w=800',
+      ownerId: partner1.id,
     },
   });
 
@@ -76,50 +136,7 @@ async function main() {
       capacity: 4,
       pricePerHour: 45.00,
       imageUrl: 'https://images.unsplash.com/photo-1622279457486-62dcc4a431d6?w=800',
-    },
-  });
-
-  const meetingRoom = await prisma.resource.create({
-    data: {
-      name: 'Executive Meeting Room',
-      description: 'Elegant meeting room with 65" screen, video conferencing, whiteboard, and complimentary coffee.',
-      type: ResourceType.ROOM,
-      capacity: 12,
-      pricePerHour: 50.00,
-      imageUrl: 'https://images.unsplash.com/photo-1497366216548-37526070297c?w=800',
-    },
-  });
-
-  const coworkingDesk = await prisma.resource.create({
-    data: {
-      name: 'Hot Desk - Open Space',
-      description: 'Flexible desk in our open coworking area. Includes high-speed WiFi, power outlets, and locker.',
-      type: ResourceType.DESK,
-      capacity: 1,
-      pricePerHour: 10.00,
-      imageUrl: 'https://images.unsplash.com/photo-1497366811353-6870744d04b2?w=800',
-    },
-  });
-
-  const privateRoom = await prisma.resource.create({
-    data: {
-      name: 'Private Office Pod',
-      description: 'Soundproof private pod for focused work or confidential calls. Includes monitor and ergonomic chair.',
-      type: ResourceType.ROOM,
-      capacity: 2,
-      pricePerHour: 25.00,
-      imageUrl: 'https://images.unsplash.com/photo-1524758631624-e2822e304c36?w=800',
-    },
-  });
-
-  const eventHall = await prisma.resource.create({
-    data: {
-      name: 'Grand Event Hall',
-      description: 'Spacious event hall for conferences, workshops, and celebrations. Full AV setup, catering available.',
-      type: ResourceType.ROOM,
-      capacity: 100,
-      pricePerHour: 200.00,
-      imageUrl: 'https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=800',
+      ownerId: partner1.id,
     },
   });
 
@@ -131,6 +148,57 @@ async function main() {
       capacity: 20,
       pricePerHour: 80.00,
       imageUrl: 'https://images.unsplash.com/photo-1546519638-68e109498ffc?w=800',
+      ownerId: partner1.id,
+    },
+  });
+
+  // Partner 2: CoWork Plus
+  const meetingRoom = await prisma.resource.create({
+    data: {
+      name: 'Executive Meeting Room',
+      description: 'Elegant meeting room with 65" screen, video conferencing, whiteboard, and complimentary coffee.',
+      type: ResourceType.ROOM,
+      capacity: 12,
+      pricePerHour: 50.00,
+      imageUrl: 'https://images.unsplash.com/photo-1497366216548-37526070297c?w=800',
+      ownerId: partner2.id,
+    },
+  });
+
+  const coworkingDesk = await prisma.resource.create({
+    data: {
+      name: 'Hot Desk - Open Space',
+      description: 'Flexible desk in our open coworking area. Includes high-speed WiFi, power outlets, and locker.',
+      type: ResourceType.DESK,
+      capacity: 1,
+      pricePerHour: 10.00,
+      imageUrl: 'https://images.unsplash.com/photo-1497366811353-6870744d04b2?w=800',
+      ownerId: partner2.id,
+    },
+  });
+
+  const privateRoom = await prisma.resource.create({
+    data: {
+      name: 'Private Office Pod',
+      description: 'Soundproof private pod for focused work or confidential calls. Includes monitor and ergonomic chair.',
+      type: ResourceType.ROOM,
+      capacity: 2,
+      pricePerHour: 25.00,
+      imageUrl: 'https://images.unsplash.com/photo-1524758631624-e2822e304c36?w=800',
+      ownerId: partner2.id,
+    },
+  });
+
+  // Partner 3: Eventos Hall RD
+  const eventHall = await prisma.resource.create({
+    data: {
+      name: 'Grand Event Hall',
+      description: 'Spacious event hall for conferences, workshops, and celebrations. Full AV setup, catering available.',
+      type: ResourceType.ROOM,
+      capacity: 100,
+      pricePerHour: 200.00,
+      imageUrl: 'https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=800',
+      ownerId: partner3.id,
     },
   });
 
@@ -142,6 +210,7 @@ async function main() {
       capacity: 1,
       pricePerHour: 15.00,
       imageUrl: 'https://images.unsplash.com/photo-1478720568477-152d9b164e26?w=800',
+      ownerId: partner3.id,
     },
   });
 
@@ -216,7 +285,7 @@ async function main() {
 
   const r1 = await prisma.reservation.create({
     data: {
-      userId: user1.id,
+      userId: client1.id,
       resourceId: tennisCourt.id,
       startTime: tomorrow,
       endTime: new Date(tomorrow.getTime() + 2 * 60 * 60 * 1000),
@@ -227,7 +296,7 @@ async function main() {
 
   const r2 = await prisma.reservation.create({
     data: {
-      userId: user2.id,
+      userId: client1.id,
       resourceId: meetingRoom.id,
       startTime: dayAfter,
       endTime: new Date(dayAfter.getTime() + 3 * 60 * 60 * 1000),
@@ -238,7 +307,7 @@ async function main() {
 
   const r3 = await prisma.reservation.create({
     data: {
-      userId: user3.id,
+      userId: client2.id,
       resourceId: basketballCourt.id,
       startTime: new Date(tomorrow.getTime() + 4 * 60 * 60 * 1000),
       endTime: new Date(tomorrow.getTime() + 6 * 60 * 60 * 1000),
@@ -249,7 +318,7 @@ async function main() {
 
   const r4 = await prisma.reservation.create({
     data: {
-      userId: user1.id,
+      userId: client3.id,
       resourceId: coworkingDesk.id,
       startTime: new Date(dayAfter.getTime() - 4 * 60 * 60 * 1000),
       endTime: new Date(dayAfter.getTime() - 1 * 60 * 60 * 1000),
@@ -259,13 +328,14 @@ async function main() {
   });
 
   // Past reservations for stats
+  const clients = [client1, client2, client3];
   for (let i = 1; i <= 20; i++) {
     const pastDate = new Date(now);
     pastDate.setDate(pastDate.getDate() - i);
     pastDate.setHours(10 + (i % 8), 0, 0, 0);
 
     const resource = resources[i % resources.length];
-    const user = [user1, user2, user3][i % 3];
+    const client = clients[i % 3];
     const hours = 1 + (i % 3);
     const status = i % 4 === 0
       ? ReservationStatus.CANCELLED
@@ -273,7 +343,7 @@ async function main() {
 
     await prisma.reservation.create({
       data: {
-        userId: user.id,
+        userId: client.id,
         resourceId: resource.id,
         startTime: pastDate,
         endTime: new Date(pastDate.getTime() + hours * 60 * 60 * 1000),
@@ -289,7 +359,7 @@ async function main() {
   await prisma.payment.create({
     data: {
       reservationId: r1.id,
-      userId: user1.id,
+      userId: client1.id,
       amount: r1.totalAmount,
       status: PaymentStatus.COMPLETED,
       stripePaymentId: 'pi_demo_1',
@@ -299,7 +369,7 @@ async function main() {
   await prisma.payment.create({
     data: {
       reservationId: r3.id,
-      userId: user3.id,
+      userId: client2.id,
       amount: r3.totalAmount,
       status: PaymentStatus.COMPLETED,
       stripePaymentId: 'pi_demo_2',
@@ -309,7 +379,7 @@ async function main() {
   await prisma.payment.create({
     data: {
       reservationId: r4.id,
-      userId: user1.id,
+      userId: client3.id,
       amount: r4.totalAmount,
       status: PaymentStatus.COMPLETED,
       stripePaymentId: 'pi_demo_3',
@@ -318,11 +388,31 @@ async function main() {
 
   console.log('✅ Payments created');
 
+  // ─── Reviews ──────────────────────────────────────────
+  await prisma.review.createMany({
+    data: [
+      { resourceId: tennisCourt.id, userId: client1.id, rating: 5, comment: 'Excelente cancha, muy bien mantenida.' },
+      { resourceId: tennisCourt.id, userId: client2.id, rating: 4, comment: 'Buena iluminación, aunque el piso puede mejorar.' },
+      { resourceId: basketballCourt.id, userId: client2.id, rating: 5, comment: 'La mejor cancha de basketball de la zona.' },
+      { resourceId: meetingRoom.id, userId: client1.id, rating: 4, comment: 'Sala muy profesional, el café es un plus.' },
+      { resourceId: meetingRoom.id, userId: client3.id, rating: 5, comment: 'Perfecta para presentaciones con clientes.' },
+      { resourceId: coworkingDesk.id, userId: client3.id, rating: 3, comment: 'Buen espacio pero a veces hay ruido.' },
+      { resourceId: eventHall.id, userId: client1.id, rating: 5, comment: 'Salón espectacular para eventos grandes.' },
+      { resourceId: privateRoom.id, userId: client2.id, rating: 4, comment: 'Muy privado y cómodo para llamadas.' },
+    ],
+  });
+
+  console.log('✅ Reviews created');
+
   console.log('\n🎉 Seed completed successfully!');
   console.log('\n📋 Demo Accounts:');
-  console.log('  Admin: admin@reservations.com / Admin123!');
-  console.log('  User:  john@example.com / User123!');
-  console.log('  Client: jane@example.com / User123!');
+  console.log('  Admin:   admin@reservations.com / Admin123!');
+  console.log('  Partner: carlos@sportcenter.com / User123!');
+  console.log('  Partner: maria@coworkplus.com / User123!');
+  console.log('  Partner: pedro@eventoshall.com / User123!');
+  console.log('  Client:  jane@example.com / User123!');
+  console.log('  Client:  bob@example.com / User123!');
+  console.log('  Client:  ana@example.com / User123!');
 }
 
 main()

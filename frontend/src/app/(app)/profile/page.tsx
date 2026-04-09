@@ -7,7 +7,7 @@ import { Card, CardBody, CardHeader } from '@/components/ui/card';
 import { Input } from '@/components/ui/form-fields';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { FiUser, FiMail, FiShield, FiBell, FiCreditCard } from 'react-icons/fi';
+import { UserIcon, EnvelopeIcon, ShieldCheckIcon, BellIcon, CreditCardIcon } from '@heroicons/react/24/outline';
 
 export default function ProfilePage() {
   const { user } = useAuth();
@@ -57,7 +57,7 @@ export default function ProfilePage() {
               </h2>
               <div className="flex items-center gap-3 mt-1 flex-wrap">
                 <span className="text-sm text-[var(--muted-foreground)] flex items-center gap-1.5">
-                  <FiMail className="h-3.5 w-3.5" />
+                  <EnvelopeIcon className="h-3.5 w-3.5" />
                   {user.email}
                 </span>
                 <Badge variant={user.role === 'ADMIN' ? 'info' : 'neutral'}>
@@ -76,7 +76,7 @@ export default function ProfilePage() {
       <Card>
         <CardHeader>
           <h2 className="font-semibold text-[var(--foreground)] flex items-center gap-2">
-            <FiUser className="h-4 w-4 text-[var(--muted-foreground)]" />
+            <UserIcon className="h-4 w-4 text-[var(--muted-foreground)]" />
             Personal Details
           </h2>
         </CardHeader>
@@ -107,7 +107,7 @@ export default function ProfilePage() {
       <Card>
         <CardHeader>
           <h2 className="font-semibold text-[var(--foreground)] flex items-center gap-2">
-            <FiBell className="h-4 w-4 text-[var(--muted-foreground)]" />
+            <BellIcon className="h-4 w-4 text-[var(--muted-foreground)]" />
             Notification Preferences
           </h2>
         </CardHeader>
@@ -140,7 +140,7 @@ export default function ProfilePage() {
         <CardHeader>
           <div className="flex items-center justify-between">
             <h2 className="font-semibold text-[var(--foreground)] flex items-center gap-2">
-              <FiCreditCard className="h-4 w-4 text-[var(--muted-foreground)]" />
+              <CreditCardIcon className="h-4 w-4 text-[var(--muted-foreground)]" />
               Payment Methods
             </h2>
             <button className="text-sm font-medium text-[var(--primary)] hover:text-[var(--primary-hover)] transition-colors cursor-pointer">
@@ -167,7 +167,7 @@ export default function ProfilePage() {
       <Card>
         <CardHeader>
           <h2 className="font-semibold text-[var(--foreground)] flex items-center gap-2">
-            <FiShield className="h-4 w-4 text-[var(--muted-foreground)]" />
+            <ShieldCheckIcon className="h-4 w-4 text-[var(--muted-foreground)]" />
             Account Details
           </h2>
         </CardHeader>

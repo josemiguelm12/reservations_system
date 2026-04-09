@@ -8,7 +8,7 @@ import { StatusBadge, PaymentStatusBadge } from '@/components/ui/badge';
 import { FullPageLoader } from '@/components/ui/loading-spinner';
 import { Modal } from '@/components/ui/modal';
 import { formatCurrency } from '@/lib/utils';
-import { FiArrowLeft, FiCalendar, FiClock, FiMapPin, FiCreditCard, FiFileText } from 'react-icons/fi';
+import { ArrowLeftIcon, CalendarDaysIcon, ClockIcon, MapPinIcon, CreditCardIcon, DocumentTextIcon } from '@heroicons/react/24/outline';
 import Link from 'next/link';
 import { useState } from 'react';
 
@@ -41,7 +41,7 @@ export default function ReservationDetailPage() {
         href="/reservations"
         className="inline-flex items-center gap-1 text-sm text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors"
       >
-        <FiArrowLeft className="h-4 w-4" />
+        <ArrowLeftIcon className="h-4 w-4" />
         Volver a Mis Reservas
       </Link>
 
@@ -58,7 +58,7 @@ export default function ReservationDetailPage() {
         <div className="flex gap-2">
           {canPay && (
             <Button onClick={handlePay}>
-              <FiCreditCard className="h-4 w-4" />
+              <CreditCardIcon className="h-4 w-4" />
               Pagar
             </Button>
           )}
@@ -86,7 +86,7 @@ export default function ReservationDetailPage() {
               </h3>
               {reservation.resource?.location && (
                 <p className="text-sm text-[var(--text-muted)] flex items-center gap-1 mt-1">
-                  <FiMapPin className="h-3.5 w-3.5" />
+                  <MapPinIcon className="h-3.5 w-3.5" />
                   {reservation.resource.location}
                 </p>
               )}
@@ -102,7 +102,7 @@ export default function ReservationDetailPage() {
         </CardHeader>
         <CardBody className="space-y-3">
           <DetailRow
-            icon={<FiCalendar className="h-4 w-4" />}
+            icon={<CalendarDaysIcon className="h-4 w-4" />}
             label="Fecha"
             value={new Date(reservation.startTime).toLocaleDateString('es-ES', {
               weekday: 'long',
@@ -112,7 +112,7 @@ export default function ReservationDetailPage() {
             })}
           />
           <DetailRow
-            icon={<FiClock className="h-4 w-4" />}
+            icon={<ClockIcon className="h-4 w-4" />}
             label="Horario"
             value={`${new Date(reservation.startTime).toLocaleTimeString('es-ES', {
               hour: '2-digit',
@@ -123,19 +123,19 @@ export default function ReservationDetailPage() {
             })}`}
           />
           <DetailRow
-            icon={<FiCreditCard className="h-4 w-4" />}
+            icon={<CreditCardIcon className="h-4 w-4" />}
             label="Total"
             value={formatCurrency(reservation.totalAmount)}
           />
           {reservation.notes && (
             <DetailRow
-              icon={<FiFileText className="h-4 w-4" />}
+              icon={<DocumentTextIcon className="h-4 w-4" />}
               label="Notas"
               value={reservation.notes}
             />
           )}
           <DetailRow
-            icon={<FiCalendar className="h-4 w-4" />}
+            icon={<CalendarDaysIcon className="h-4 w-4" />}
             label="Creada"
             value={new Date(reservation.createdAt).toLocaleString('es-ES')}
           />

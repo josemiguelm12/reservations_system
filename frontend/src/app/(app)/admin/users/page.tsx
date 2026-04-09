@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { Badge } from '@/components/ui/badge';
 import { Pagination } from '@/components/ui/empty-and-pagination';
-import { FiShield, FiUser } from 'react-icons/fi';
+import { ShieldCheckIcon, UserIcon } from '@heroicons/react/24/outline';
 
 export default function AdminUsersPage() {
   const [page, setPage] = useState(1);
@@ -97,9 +97,9 @@ export default function AdminUsersPage() {
                             loading={updateUser.isPending}
                           >
                             {user.role === 'ADMIN' ? (
-                              <FiUser className="h-4 w-4" />
+                              <UserIcon className="h-4 w-4" />
                             ) : (
-                              <FiShield className="h-4 w-4" />
+                              <ShieldCheckIcon className="h-4 w-4" />
                             )}
                             {user.role === 'ADMIN' ? 'Hacer Cliente' : 'Hacer Admin'}
                           </Button>

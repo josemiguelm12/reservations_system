@@ -2,7 +2,7 @@
 
 import { useEffect, useRef } from 'react';
 import { cn } from '@/lib/utils';
-import { FiX } from 'react-icons/fi';
+import { XMarkIcon } from '@heroicons/react/24/outline';
 
 interface ModalProps {
   open: boolean;
@@ -60,7 +60,7 @@ export function Modal({ open, onClose, title, children, className, size = 'md' }
               onClick={onClose}
               className="p-1 rounded-md hover:bg-[var(--bg-secondary)] text-[var(--text-secondary)] transition-colors cursor-pointer"
             >
-              <FiX className="h-5 w-5" />
+              <XMarkIcon className="h-5 w-5" />
             </button>
           </div>
         )}

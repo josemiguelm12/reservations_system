@@ -3,14 +3,14 @@
 import Link from 'next/link';
 import { useAuth } from '@/contexts/auth-context';
 import { Card, CardBody } from '@/components/ui/card';
-import { FiBox, FiClock, FiUsers, FiBarChart2, FiCalendar, FiArrowRight } from 'react-icons/fi';
+import { ArchiveBoxIcon, ClockIcon, UserGroupIcon, ChartBarIcon, CalendarDaysIcon, ArrowRightIcon } from '@heroicons/react/24/outline';
 import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
 
 const adminLinks = [
   {
     href: '/admin/resources',
-    icon: <FiBox className="h-6 w-6" />,
+    icon: <ArchiveBoxIcon className="h-6 w-6" />,
     title: 'Gestionar Recursos',
     desc: 'Crear, editar y eliminar recursos',
     color: 'text-violet-600',
@@ -18,7 +18,7 @@ const adminLinks = [
   },
   {
     href: '/admin/reservations',
-    icon: <FiCalendar className="h-6 w-6" />,
+    icon: <CalendarDaysIcon className="h-6 w-6" />,
     title: 'Reservas',
     desc: 'Ver, confirmar, completar y cancelar reservas',
     color: 'text-rose-600',
@@ -26,7 +26,7 @@ const adminLinks = [
   },
   {
     href: '/admin/schedules',
-    icon: <FiClock className="h-6 w-6" />,
+    icon: <ClockIcon className="h-6 w-6" />,
     title: 'Horarios',
     desc: 'Configurar horarios de disponibilidad',
     color: 'text-blue-600',
@@ -34,7 +34,7 @@ const adminLinks = [
   },
   {
     href: '/admin/users',
-    icon: <FiUsers className="h-6 w-6" />,
+    icon: <UserGroupIcon className="h-6 w-6" />,
     title: 'Usuarios',
     desc: 'Gestionar usuarios y roles',
     color: 'text-amber-600',
@@ -42,7 +42,7 @@ const adminLinks = [
   },
   {
     href: '/admin/stats',
-    icon: <FiBarChart2 className="h-6 w-6" />,
+    icon: <ChartBarIcon className="h-6 w-6" />,
     title: 'Estadísticas',
     desc: 'Ingresos, tendencias y métricas',
     color: 'text-emerald-600',
@@ -82,7 +82,7 @@ export default function AdminPage() {
                     <h3 className="font-semibold text-[var(--text-primary)]">{link.title}</h3>
                     <p className="text-sm text-[var(--text-secondary)] mt-0.5">{link.desc}</p>
                   </div>
-                  <FiArrowRight className="h-5 w-5 text-[var(--text-muted)] mt-1" />
+                  <ArrowRightIcon className="h-5 w-5 text-[var(--text-muted)] mt-1" />
                 </div>
               </CardBody>
             </Card>

@@ -5,7 +5,7 @@ import { Card, CardBody, CardHeader } from '@/components/ui/card';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { RevenueChart, TopResourcesChart, TrendChart } from '@/components/domain/charts';
 import { formatCurrency } from '@/lib/utils';
-import { FiCalendar, FiDollarSign, FiTrendingUp, FiUsers } from 'react-icons/fi';
+import { CalendarDaysIcon, CurrencyDollarIcon, ArrowTrendingUpIcon, UserGroupIcon } from '@heroicons/react/24/outline';
 
 export default function AdminStatsPage() {
   const { data: stats, isLoading: statsLoading } = useDashboardStats();
@@ -32,28 +32,28 @@ export default function AdminStatsPage() {
       {stats && (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           <SummaryCard
-            icon={<FiCalendar className="h-5 w-5" />}
+            icon={<CalendarDaysIcon className="h-5 w-5" />}
             label="Total Reservas"
             value={String(stats.totalReservations)}
             color="text-blue-600"
             bg="bg-blue-50 dark:bg-blue-900/20"
           />
           <SummaryCard
-            icon={<FiDollarSign className="h-5 w-5" />}
+            icon={<CurrencyDollarIcon className="h-5 w-5" />}
             label="Ingresos Totales"
             value={formatCurrency(stats.totalRevenue)}
             color="text-emerald-600"
             bg="bg-emerald-50 dark:bg-emerald-900/20"
           />
           <SummaryCard
-            icon={<FiTrendingUp className="h-5 w-5" />}
+            icon={<ArrowTrendingUpIcon className="h-5 w-5" />}
             label="Ingresos Mensual"
             value={formatCurrency(stats.monthlyRevenue)}
             color="text-violet-600"
             bg="bg-violet-50 dark:bg-violet-900/20"
           />
           <SummaryCard
-            icon={<FiUsers className="h-5 w-5" />}
+            icon={<UserGroupIcon className="h-5 w-5" />}
             label="Total Usuarios"
             value={String(stats.totalUsers)}
             color="text-amber-600"

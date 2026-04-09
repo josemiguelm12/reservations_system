@@ -8,7 +8,7 @@ import { Input, Select } from '@/components/ui/form-fields';
 import { Modal } from '@/components/ui/modal';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { EmptyState } from '@/components/ui/empty-and-pagination';
-import { FiPlus, FiTrash2, FiClock } from 'react-icons/fi';
+import { PlusIcon, TrashIcon, ClockIcon } from '@heroicons/react/24/outline';
 
 const dayNames = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
 
@@ -73,7 +73,7 @@ export default function AdminSchedulesPage() {
           </p>
         </div>
         <Button onClick={() => setShowForm(true)}>
-          <FiPlus className="h-4 w-4" />
+          <PlusIcon className="h-4 w-4" />
           Nuevo Horario
         </Button>
       </div>
@@ -94,12 +94,12 @@ export default function AdminSchedulesPage() {
         </div>
       ) : schedules.length === 0 ? (
         <EmptyState
-          icon={<FiClock className="h-12 w-12" />}
+          icon={<ClockIcon className="h-12 w-12" />}
           title="No hay horarios configurados"
           description="Crea horarios para que los usuarios puedan reservar"
           action={
             <Button onClick={() => setShowForm(true)}>
-              <FiPlus className="h-4 w-4" />
+              <PlusIcon className="h-4 w-4" />
               Crear Horario
             </Button>
           }
@@ -131,7 +131,7 @@ export default function AdminSchedulesPage() {
                         onClick={() => handleDelete(schedule.id)}
                         className="p-1 rounded hover:bg-red-50 dark:hover:bg-red-900/20 text-[var(--danger)] cursor-pointer"
                       >
-                        <FiTrash2 className="h-4 w-4" />
+                        <TrashIcon className="h-4 w-4" />
                       </button>
                     </div>
                   ))}

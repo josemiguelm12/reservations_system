@@ -1,5 +1,8 @@
+﻿-- CreateSchema
+CREATE SCHEMA IF NOT EXISTS "public";
+
 -- CreateEnum
-CREATE TYPE "UserRole" AS ENUM ('ADMIN', 'USER', 'CLIENT');
+CREATE TYPE "UserRole" AS ENUM ('ADMIN', 'PARTNER', 'CLIENT');
 
 -- CreateEnum
 CREATE TYPE "ResourceType" AS ENUM ('COURT', 'ROOM', 'TABLE', 'DESK', 'EQUIPMENT', 'OTHER');
@@ -29,6 +32,22 @@ CREATE TABLE "users" (
 );
 
 -- CreateTable
+CREATE TABLE "partner_profiles" (
+    "id" TEXT NOT NULL,
+    "userId" TEXT NOT NULL,
+    "businessName" TEXT NOT NULL,
+    "description" TEXT,
+    "logoUrl" TEXT,
+    "phone" TEXT,
+    "address" TEXT,
+    "isVerified" BOOLEAN NOT NULL DEFAULT false,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "partner_profiles_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
 CREATE TABLE "resources" (
     "id" TEXT NOT NULL,
     "name" TEXT NOT NULL,
@@ -37,6 +56,7 @@ CREATE TABLE "resources" (
     "capacity" INTEGER NOT NULL,
     "pricePerHour" DOUBLE PRECISION NOT NULL,
     "imageUrl" TEXT,
+    "ownerId" TEXT,
     "isActive" BOOLEAN NOT NULL DEFAULT true,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
@@ -101,6 +121,19 @@ CREATE TABLE "payments" (
     CONSTRAINT "payments_pkey" PRIMARY KEY ("id")
 );
 
+-- CreateTable
+CREATE TABLE "reviews" (
+    "id" TEXT NOT NULL,
+    "resourceId" TEXT NOT NULL,
+    "userId" TEXT NOT NULL,
+    "rating" INTEGER NOT NULL,
+    "comment" TEXT,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "reviews_pkey" PRIMARY KEY ("id")
+);
+
 -- CreateIndex
 CREATE UNIQUE INDEX "users_email_key" ON "users"("email");
 
@@ -111,10 +144,19 @@ CREATE INDEX "users_email_idx" ON "users"("email");
 CREATE INDEX "users_role_idx" ON "users"("role");
 
 -- CreateIndex
+CREATE UNIQUE INDEX "partner_profiles_userId_key" ON "partner_profiles"("userId");
+
+-- CreateIndex
+CREATE INDEX "partner_profiles_isVerified_idx" ON "partner_profiles"("isVerified");
+
+-- CreateIndex
 CREATE INDEX "resources_type_idx" ON "resources"("type");
 
 -- CreateIndex
 CREATE INDEX "resources_isActive_idx" ON "resources"("isActive");
+
+-- CreateIndex
+CREATE INDEX "resources_ownerId_idx" ON "resources"("ownerId");
 
 -- CreateIndex
 CREATE INDEX "schedules_resourceId_dayOfWeek_idx" ON "schedules"("resourceId", "dayOfWeek");
@@ -149,6 +191,21 @@ CREATE INDEX "payments_status_idx" ON "payments"("status");
 -- CreateIndex
 CREATE INDEX "payments_stripePaymentId_idx" ON "payments"("stripePaymentId");
 
+-- CreateIndex
+CREATE INDEX "reviews_resourceId_idx" ON "reviews"("resourceId");
+
+-- CreateIndex
+CREATE INDEX "reviews_userId_idx" ON "reviews"("userId");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "reviews_resourceId_userId_key" ON "reviews"("resourceId", "userId");
+
+-- AddForeignKey
+ALTER TABLE "partner_profiles" ADD CONSTRAINT "partner_profiles_userId_fkey" FOREIGN KEY ("userId") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "resources" ADD CONSTRAINT "resources_ownerId_fkey" FOREIGN KEY ("ownerId") REFERENCES "users"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
 -- AddForeignKey
 ALTER TABLE "schedules" ADD CONSTRAINT "schedules_resourceId_fkey" FOREIGN KEY ("resourceId") REFERENCES "resources"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
@@ -163,3 +220,10 @@ ALTER TABLE "payments" ADD CONSTRAINT "payments_reservationId_fkey" FOREIGN KEY 
 
 -- AddForeignKey
 ALTER TABLE "payments" ADD CONSTRAINT "payments_userId_fkey" FOREIGN KEY ("userId") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "reviews" ADD CONSTRAINT "reviews_resourceId_fkey" FOREIGN KEY ("resourceId") REFERENCES "resources"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "reviews" ADD CONSTRAINT "reviews_userId_fkey" FOREIGN KEY ("userId") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+

@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import { Inter } from 'next/font/google';
+import { Inter, Manrope } from 'next/font/google';
 import { Toaster } from 'sonner';
 import { AuthProvider } from '@/contexts/auth-context';
 import { QueryProvider } from '@/contexts/query-provider';
@@ -11,10 +11,16 @@ const inter = Inter({
   weight: ['400', '500', '600', '700'],
 });
 
+const manrope = Manrope({
+  variable: '--font-manrope',
+  subsets: ['latin'],
+  weight: ['600', '700', '800'],
+});
+
 export const metadata: Metadata = {
-  title: 'ReservasPro - Gestión Inteligente',
+  title: 'ReservasPro | Precision Curator',
   description:
-    'Plataforma premium de gestión de reservas con pagos integrados, notificaciones y panel de administración avanzado.',
+    'Marketplace premium de espacios arquitectónicos. Reserva salas, canchas, escritorios y más con un solo clic.',
 };
 
 export default function RootLayout({
@@ -30,7 +36,7 @@ export default function RootLayout({
           rel="stylesheet"
         />
       </head>
-      <body className={`${inter.variable} antialiased`}>
+      <body className={`${inter.variable} ${manrope.variable} antialiased`}>
         <div className="relative flex min-h-screen flex-col">
           <QueryProvider>
             <AuthProvider>

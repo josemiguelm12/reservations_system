@@ -12,13 +12,13 @@ import { Modal } from '@/components/ui/modal';
 import { formatCurrency } from '@/lib/utils';
 import type { ReservationStatus } from '@/lib/types';
 import {
-  FiCalendar,
-  FiCheckCircle,
-  FiXCircle,
-  FiCheck,
-  FiFilter,
-  FiEye,
-} from 'react-icons/fi';
+  CalendarDaysIcon,
+  CheckCircleIcon,
+  XCircleIcon,
+  CheckIcon,
+  FunnelIcon,
+  EyeIcon,
+} from '@heroicons/react/24/outline';
 
 const STATUS_OPTIONS: { value: string; label: string }[] = [
   { value: '', label: 'Todos' },
@@ -72,7 +72,7 @@ export default function AdminReservationsPage() {
 
       {/* Filter */}
       <div className="flex items-center gap-2 flex-wrap">
-        <FiFilter className="h-4 w-4 text-[var(--text-muted)]" />
+        <FunnelIcon className="h-4 w-4 text-[var(--text-muted)]" />
         {STATUS_OPTIONS.map((opt) => (
           <button
             key={opt.value}
@@ -94,7 +94,7 @@ export default function AdminReservationsPage() {
         </div>
       ) : !data?.data.length ? (
         <EmptyState
-          icon={<FiCalendar className="h-12 w-12" />}
+          icon={<CalendarDaysIcon className="h-12 w-12" />}
           title="Sin reservas"
           description="No hay reservas que coincidan con el filtro seleccionado."
         />
@@ -204,7 +204,7 @@ export default function AdminReservationsPage() {
                             onClick={() => router.push(`/reservations/${r.id}`)}
                             title="Ver detalle"
                           >
-                            <FiEye className="h-4 w-4" />
+                            <EyeIcon className="h-4 w-4" />
                           </Button>
                           {r.status === 'PENDING' && (
                             <Button
@@ -213,7 +213,7 @@ export default function AdminReservationsPage() {
                               onClick={() => openAction(r.id, r.status, 'CONFIRMED')}
                               title="Confirmar"
                             >
-                              <FiCheckCircle className="h-4 w-4" />
+                              <CheckCircleIcon className="h-4 w-4" />
                             </Button>
                           )}
                           {r.status === 'CONFIRMED' && (
@@ -223,7 +223,7 @@ export default function AdminReservationsPage() {
                               onClick={() => openAction(r.id, r.status, 'COMPLETED')}
                               title="Completar"
                             >
-                              <FiCheck className="h-4 w-4" />
+                              <CheckIcon className="h-4 w-4" />
                             </Button>
                           )}
                           {(r.status === 'PENDING' || r.status === 'CONFIRMED') && (
@@ -233,7 +233,7 @@ export default function AdminReservationsPage() {
                               onClick={() => openAction(r.id, r.status, 'CANCELLED')}
                               title="Cancelar"
                             >
-                              <FiXCircle className="h-4 w-4" />
+                              <XCircleIcon className="h-4 w-4" />
                             </Button>
                           )}
                         </div>

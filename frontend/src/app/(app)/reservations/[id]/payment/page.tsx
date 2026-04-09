@@ -15,7 +15,7 @@ import { Button } from '@/components/ui/button';
 import { StatusBadge } from '@/components/ui/badge';
 import { FullPageLoader } from '@/components/ui/loading-spinner';
 import { formatCurrency } from '@/lib/utils';
-import { FiArrowLeft, FiCreditCard, FiCheckCircle, FiXCircle } from 'react-icons/fi';
+import { ArrowLeftIcon, CreditCardIcon, CheckCircleIcon, XCircleIcon } from '@heroicons/react/24/outline';
 import Link from 'next/link';
 
 const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY || '');
@@ -67,7 +67,7 @@ function CheckoutForm({
 
       {error && (
         <div className="flex items-center gap-2 p-3 rounded-lg bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400 text-sm">
-          <FiXCircle className="h-4 w-4 shrink-0" />
+          <XCircleIcon className="h-4 w-4 shrink-0" />
           {error}
         </div>
       )}
@@ -77,7 +77,7 @@ function CheckoutForm({
           Total a pagar: <span className="font-bold text-[var(--text-primary)]">{formatCurrency(amount)}</span>
         </p>
         <Button type="submit" loading={loading} disabled={!stripe || !elements}>
-          <FiCreditCard className="h-4 w-4" />
+          <CreditCardIcon className="h-4 w-4" />
           Pagar {formatCurrency(amount)}
         </Button>
       </div>
@@ -123,7 +123,7 @@ export default function PaymentPage() {
   if (reservation.payment?.status === 'COMPLETED' || reservation.status === 'CONFIRMED' || reservation.status === 'COMPLETED') {
     return (
       <div className="max-w-lg mx-auto text-center space-y-4 py-12">
-        <FiCheckCircle className="h-16 w-16 text-emerald-500 mx-auto" />
+        <CheckCircleIcon className="h-16 w-16 text-emerald-500 mx-auto" />
         <h1 className="text-2xl font-bold text-[var(--text-primary)]">Reserva Confirmada</h1>
         <p className="text-[var(--text-secondary)]">
           Esta reserva ya ha sido pagada y confirmada.
@@ -139,7 +139,7 @@ export default function PaymentPage() {
   if (reservation.status === 'CANCELLED') {
     return (
       <div className="max-w-lg mx-auto text-center space-y-4 py-12">
-        <FiXCircle className="h-16 w-16 text-red-500 mx-auto" />
+        <XCircleIcon className="h-16 w-16 text-red-500 mx-auto" />
         <h1 className="text-2xl font-bold text-[var(--text-primary)]">Reserva Cancelada</h1>
         <p className="text-[var(--text-secondary)]">No se puede procesar el pago de una reserva cancelada.</p>
         <Link href="/reservations">
@@ -155,7 +155,7 @@ export default function PaymentPage() {
         href={`/reservations/${id}`}
         className="inline-flex items-center gap-1 text-sm text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors"
       >
-        <FiArrowLeft className="h-4 w-4" />
+        <ArrowLeftIcon className="h-4 w-4" />
         Volver al detalle
       </Link>
 
@@ -215,14 +215,14 @@ export default function PaymentPage() {
       <Card>
         <CardHeader>
           <h2 className="font-semibold text-[var(--text-primary)] flex items-center gap-2">
-            <FiCreditCard className="h-4 w-4" />
+            <CreditCardIcon className="h-4 w-4" />
             Datos de Pago
           </h2>
         </CardHeader>
         <CardBody>
           {paymentError ? (
             <div className="flex items-center gap-2 p-3 rounded-lg bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400 text-sm">
-              <FiXCircle className="h-4 w-4 shrink-0" />
+              <XCircleIcon className="h-4 w-4 shrink-0" />
               {paymentError}
             </div>
           ) : clientSecret ? (

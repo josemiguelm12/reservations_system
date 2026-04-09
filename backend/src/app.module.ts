@@ -12,6 +12,7 @@ import { ReservationsModule } from './reservations/reservations.module';
 import { PaymentsModule } from './payments/payments.module';
 import { NotificationsModule } from './notifications/notifications.module';
 import { StatsModule } from './stats/stats.module';
+import { ReviewsModule } from './reviews/reviews.module';
 import { HttpExceptionFilter } from './common/filters/http-exception.filter';
 import { APP_FILTER } from '@nestjs/core';
 
@@ -35,6 +36,7 @@ import { APP_FILTER } from '@nestjs/core';
     PaymentsModule,
     NotificationsModule,
     StatsModule,
+    ReviewsModule,
   ],
   providers: [
     {

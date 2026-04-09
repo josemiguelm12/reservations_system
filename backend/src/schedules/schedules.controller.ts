@@ -14,7 +14,7 @@ import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { UserRole } from '@prisma/client';
 import { SchedulesService } from './schedules.service';
 import { CreateScheduleDto, UpdateScheduleDto, CreateScheduleExceptionDto } from './dto';
-import { Roles } from '../common/decorators';
+import { Roles, CurrentUser } from '../common/decorators';
 import { RolesGuard } from '../common/guards';
 
 @ApiTags('schedules')
@@ -24,11 +24,14 @@ export class SchedulesController {
 
   @Post()
   @UseGuards(AuthGuard('jwt'), RolesGuard)
-  @Roles(UserRole.ADMIN)
+  @Roles(UserRole.PARTNER, UserRole.ADMIN)
   @ApiBearerAuth()
-  @ApiOperation({ summary: 'Create schedule for a resource (Admin only)' })
-  create(@Body() dto: CreateScheduleDto) {
-    return this.schedulesService.create(dto);
+  @ApiOperation({ summary: 'Create schedule for a resource (Partner/Admin)' })
+  create(
+    @Body() dto: CreateScheduleDto,
+    @CurrentUser() user: any,
+  ) {
+    return this.schedulesService.create(dto, user);
   }
 
   @Get('resource/:resourceId')
@@ -39,33 +42,40 @@ export class SchedulesController {
 
   @Patch(':id')
   @UseGuards(AuthGuard('jwt'), RolesGuard)
-  @Roles(UserRole.ADMIN)
+  @Roles(UserRole.PARTNER, UserRole.ADMIN)
   @ApiBearerAuth()
-  @ApiOperation({ summary: 'Update schedule (Admin only)' })
+  @ApiOperation({ summary: 'Update schedule (Owner/Admin)' })
   update(
     @Param('id', ParseUUIDPipe) id: string,
     @Body() dto: UpdateScheduleDto,
+    @CurrentUser() user: any,
   ) {
-    return this.schedulesService.update(id, dto);
+    return this.schedulesService.update(id, dto, user);
   }
 
   @Delete(':id')
   @UseGuards(AuthGuard('jwt'), RolesGuard)
-  @Roles(UserRole.ADMIN)
+  @Roles(UserRole.PARTNER, UserRole.ADMIN)
   @ApiBearerAuth()
-  @ApiOperation({ summary: 'Delete schedule (Admin only)' })
-  remove(@Param('id', ParseUUIDPipe) id: string) {
-    return this.schedulesService.remove(id);
+  @ApiOperation({ summary: 'Delete schedule (Owner/Admin)' })
+  remove(
+    @Param('id', ParseUUIDPipe) id: string,
+    @CurrentUser() user: any,
+  ) {
+    return this.schedulesService.remove(id, user);
   }
 
   // Exceptions
   @Post('exceptions')
   @UseGuards(AuthGuard('jwt'), RolesGuard)
-  @Roles(UserRole.ADMIN)
+  @Roles(UserRole.PARTNER, UserRole.ADMIN)
   @ApiBearerAuth()
-  @ApiOperation({ summary: 'Create schedule exception (Admin only)' })
-  createException(@Body() dto: CreateScheduleExceptionDto) {
-    return this.schedulesService.createException(dto);
+  @ApiOperation({ summary: 'Create schedule exception (Owner/Admin)' })
+  createException(
+    @Body() dto: CreateScheduleExceptionDto,
+    @CurrentUser() user: any,
+  ) {
+    return this.schedulesService.createException(dto, user);
   }
 
   @Get('exceptions/:resourceId')
@@ -76,10 +86,13 @@ export class SchedulesController {
 
   @Delete('exceptions/:id')
   @UseGuards(AuthGuard('jwt'), RolesGuard)
-  @Roles(UserRole.ADMIN)
+  @Roles(UserRole.PARTNER, UserRole.ADMIN)
   @ApiBearerAuth()
-  @ApiOperation({ summary: 'Delete schedule exception (Admin only)' })
-  removeException(@Param('id', ParseUUIDPipe) id: string) {
-    return this.schedulesService.removeException(id);
+  @ApiOperation({ summary: 'Delete schedule exception (Owner/Admin)' })
+  removeException(
+    @Param('id', ParseUUIDPipe) id: string,
+    @CurrentUser() user: any,
+  ) {
+    return this.schedulesService.removeException(id, user);
   }
 }

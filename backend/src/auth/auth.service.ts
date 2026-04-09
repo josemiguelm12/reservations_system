@@ -2,6 +2,7 @@ import {
   Injectable,
   UnauthorizedException,
   ConflictException,
+  BadRequestException,
   Logger,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
@@ -30,6 +31,13 @@ export class AuthService {
       throw new ConflictException('Email already registered');
     }
 
+    const role = dto.role || 'CLIENT';
+
+    // Validate partner fields
+    if (role === 'PARTNER' && !dto.businessName) {
+      throw new BadRequestException('Business name is required for partners');
+    }
+
     const hashedPassword = await bcrypt.hash(dto.password, 12);
 
     const user = await this.prisma.user.create({
@@ -37,6 +45,17 @@ export class AuthService {
         email: dto.email,
         password: hashedPassword,
         fullName: dto.fullName,
+        role,
+        ...(role === 'PARTNER' && {
+          partnerProfile: {
+            create: {
+              businessName: dto.businessName!,
+              description: dto.businessDescription,
+              phone: dto.phone,
+              address: dto.address,
+            },
+          },
+        }),
       },
     });
 
@@ -65,6 +84,7 @@ export class AuthService {
   async login(dto: LoginDto) {
     const user = await this.prisma.user.findUnique({
       where: { email: dto.email },
+      include: { partnerProfile: true },
     });
 
     if (!user || !user.isActive) {
@@ -95,6 +115,7 @@ export class AuthService {
         email: user.email,
         fullName: user.fullName,
         role: user.role,
+        ...(user.partnerProfile && { partnerProfile: user.partnerProfile }),
       },
     };
   }
@@ -107,6 +128,7 @@ export class AuthService {
 
       const user = await this.prisma.user.findUnique({
         where: { id: payload.sub },
+        include: { partnerProfile: true },
       });
 
       if (!user || !user.refreshToken || !user.isActive) {
@@ -140,6 +162,7 @@ export class AuthService {
           email: user.email,
           fullName: user.fullName,
           role: user.role,
+          ...(user.partnerProfile && { partnerProfile: user.partnerProfile }),
         },
       };
     } catch (error) {

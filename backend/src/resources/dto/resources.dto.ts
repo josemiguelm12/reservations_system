@@ -5,6 +5,7 @@ import {
   IsInt,
   IsNumber,
   IsBoolean,
+  IsUUID,
   Min,
   Max,
   MaxLength,
@@ -44,6 +45,11 @@ export class CreateResourceDto {
   @IsOptional()
   @IsString()
   imageUrl?: string;
+
+  @ApiPropertyOptional({ description: 'Owner ID (Admin only, auto-assigned for partners)' })
+  @IsOptional()
+  @IsUUID()
+  ownerId?: string;
 }
 
 export class UpdateResourceDto extends PartialType(CreateResourceDto) {

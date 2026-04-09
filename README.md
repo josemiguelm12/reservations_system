@@ -1,6 +1,6 @@
 # ReservasPro — Plataforma de Reservas Fullstack
 
-> Plataforma SaaS profesional para gestión de reservas con NestJS, Prisma, PostgreSQL, Next.js, Stripe y notificaciones por email.
+> Plataforma para gestión de reservas con NestJS, Prisma, PostgreSQL, Next.js, Stripe y notificaciones por email.
 
 ---
 
