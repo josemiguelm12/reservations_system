@@ -8,7 +8,7 @@ interface AuthContextType {
   user: User | null;
   isLoading: boolean;
   isAuthenticated: boolean;
-  login: (email: string, password: string) => Promise<void>;
+  login: (email: string, password: string) => Promise<User>;
   register: (data: { email: string; password: string; fullName: string; role?: 'CLIENT' | 'PARTNER'; businessName?: string; businessDescription?: string; phone?: string; address?: string }) => Promise<void>;
   logout: () => Promise<void>;
   refreshUser: () => Promise<void>;
@@ -36,7 +36,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     refreshUser();
-    refreshUser();
   }, [refreshUser]);
 
   const login = async (email: string, password: string) => {
@@ -46,6 +45,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     });
     setAccessToken(response.data.accessToken);
     setUser(response.data.user);
+    return response.data.user;
   };
 
   const register = async (data: { email: string; password: string; fullName: string; role?: 'CLIENT' | 'PARTNER'; businessName?: string; businessDescription?: string; phone?: string; address?: string }) => {

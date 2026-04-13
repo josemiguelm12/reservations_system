@@ -17,18 +17,18 @@ interface NavLink {
   href: string;
   label: string;
   icon: string;
-  adminOnly?: boolean;
+  roles?: string[]; // If undefined, anyone can see it
 }
 
 const navLinks: NavLink[] = [
-  { href: '/dashboard', label: 'Dashboard', icon: 'dashboard', adminOnly: true },
-  { href: '/resources', label: 'Explorar', icon: 'explore' },
-  { href: '/reservations', label: 'Reservas', icon: 'calendar_month' },
-  { href: '/admin/resources', label: 'Recursos', icon: 'inventory_2', adminOnly: true },
-  { href: '/admin/reservations', label: 'Reservas', icon: 'event_note', adminOnly: true },
-  { href: '/admin/schedules', label: 'Horarios', icon: 'schedule', adminOnly: true },
-  { href: '/admin/users', label: 'Usuarios', icon: 'group', adminOnly: true },
-  { href: '/admin/stats', label: 'Stats', icon: 'bar_chart', adminOnly: true },
+  { href: '/dashboard', label: 'Dashboard', icon: 'dashboard', roles: ['ADMIN', 'PARTNER'] },
+  { href: '/resources', label: 'Explorar', icon: 'explore', roles: ['ADMIN', 'CLIENT'] },
+  { href: '/reservations', label: 'Mis Reservas', icon: 'calendar_month', roles: ['CLIENT', 'ADMIN'] },
+  { href: '/admin/resources', label: 'Recursos', icon: 'inventory_2', roles: ['ADMIN', 'PARTNER'] },
+  { href: '/admin/reservations', label: 'Recibidas', icon: 'event_note', roles: ['ADMIN', 'PARTNER'] },
+  { href: '/admin/schedules', label: 'Horarios', icon: 'schedule', roles: ['ADMIN', 'PARTNER'] },
+  { href: '/admin/users', label: 'Usuarios', icon: 'group', roles: ['ADMIN'] },
+  { href: '/admin/stats', label: 'Stats', icon: 'bar_chart', roles: ['ADMIN'] },
 ];
 
 export function Navbar() {
@@ -38,8 +38,8 @@ export function Navbar() {
   const menuRef = useRef<HTMLDivElement>(null);
   const pathname = usePathname();
 
-  const isAdmin = user?.role === 'ADMIN';
-  const visibleLinks = navLinks.filter((l) => !l.adminOnly || isAdmin);
+  const isPartnerOrAdmin = user?.role === 'PARTNER' || user?.role === 'ADMIN';
+  const visibleLinks = navLinks.filter((l) => !l.roles || (user && l.roles.includes(user.role)));
 
   useEffect(() => {
     const handler = (e: MouseEvent) => {
@@ -63,7 +63,7 @@ export function Navbar() {
         <div className="flex items-center justify-between h-16">
           {/* Left: Logo + Desktop Nav */}
           <div className="flex items-center gap-8">
-            <Link href={isAdmin ? '/dashboard' : '/resources'} className="flex items-center gap-2.5 flex-shrink-0">
+            <Link href={isPartnerOrAdmin ? '/dashboard' : '/resources'} className="flex items-center gap-2.5 flex-shrink-0">
               <span className="text-xl font-extrabold text-blue-900 tracking-tighter font-[var(--font-headline)]">
                 ReservasPro
               </span>

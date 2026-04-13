@@ -2,8 +2,9 @@
 
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useResources } from '@/hooks/use-api';
+import { useAuth } from '@/contexts/auth-context';
 import { ResourceCard } from '@/components/domain/resource-card';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { PublicNavbar } from '@/components/layout/public-navbar';
@@ -17,21 +18,42 @@ import {
   GlobeAltIcon,
   ShareIcon,
   EnvelopeIcon,
+  BuildingOfficeIcon,
+  TrophyIcon,
+  ComputerDesktopIcon,
+  CubeIcon,
+  WrenchScrewdriverIcon,
+  EllipsisHorizontalIcon,
 } from '@heroicons/react/24/outline';
 
 const categories = [
-  { value: 'ROOM', label: 'Salas', icon: 'meeting_room', gradient: 'from-blue-500 to-indigo-600', shadow: 'shadow-blue-500/20' },
-  { value: 'COURT', label: 'Canchas', icon: 'sports_soccer', gradient: 'from-emerald-500 to-teal-600', shadow: 'shadow-emerald-500/20' },
-  { value: 'DESK', label: 'Escritorios', icon: 'desk', gradient: 'from-orange-500 to-yellow-600', shadow: 'shadow-orange-500/20' },
-  { value: 'TABLE', label: 'Mesas', icon: 'table_restaurant', gradient: 'from-pink-500 to-rose-600', shadow: 'shadow-pink-500/20' },
-  { value: 'EQUIPMENT', label: 'Equipos', icon: 'construction', gradient: 'from-purple-500 to-violet-600', shadow: 'shadow-purple-500/20' },
-  { value: 'OTHER', label: 'Otros', icon: 'more_horiz', gradient: 'from-slate-500 to-slate-700', shadow: 'shadow-slate-500/20' },
+  { value: 'ROOM', label: 'Salas', icon: BuildingOfficeIcon, gradient: 'from-blue-500 to-indigo-600', shadow: 'shadow-blue-500/20' },
+  { value: 'COURT', label: 'Canchas', icon: TrophyIcon, gradient: 'from-emerald-500 to-teal-600', shadow: 'shadow-emerald-500/20' },
+  { value: 'DESK', label: 'Escritorios', icon: ComputerDesktopIcon, gradient: 'from-orange-500 to-yellow-600', shadow: 'shadow-orange-500/20' },
+  { value: 'TABLE', label: 'Mesas', icon: CubeIcon, gradient: 'from-pink-500 to-rose-600', shadow: 'shadow-pink-500/20' },
+  { value: 'EQUIPMENT', label: 'Equipos', icon: WrenchScrewdriverIcon, gradient: 'from-purple-500 to-violet-600', shadow: 'shadow-purple-500/20' },
+  { value: 'OTHER', label: 'Otros', icon: EllipsisHorizontalIcon, gradient: 'from-slate-500 to-slate-700', shadow: 'shadow-slate-500/20' },
 ];
 
 export default function HomePage() {
   const router = useRouter();
+  const { user, isLoading: authLoading } = useAuth();
   const [searchQuery, setSearchQuery] = useState('');
   const { data: featuredData, isLoading } = useResources({ limit: 8 });
+
+  useEffect(() => {
+    if (!authLoading && user && (user.role === 'ADMIN' || user.role === 'PARTNER')) {
+      router.replace('/dashboard');
+    }
+  }, [authLoading, user, router]);
+
+  if (authLoading || (user && (user.role === 'ADMIN' || user.role === 'PARTNER'))) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <LoadingSpinner />
+      </div>
+    );
+  }
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -43,7 +65,7 @@ export default function HomePage() {
   };
 
   return (
-    <div className="min-h-screen bg-[var(--surface)]">
+    <div className="min-h-screen bg-[var(--surface)] font-[family-name:var(--font-manrope)]">
       <PublicNavbar />
 
       {/* Hero Section */}
@@ -122,9 +144,7 @@ export default function HomePage() {
               href={`/resources?type=${cat.value}`}
               className="group flex flex-col items-center p-8 rounded-xl bg-[var(--surface-container-low)] hover:bg-[var(--surface-container-high)] transition-all duration-300"
             >
-              <div className={`w-16 h-16 rounded-full bg-gradient-to-br ${cat.gradient} flex items-center justify-center text-white mb-4 shadow-lg ${cat.shadow} group-hover:scale-110 transition-transform`}>
-                <span className="material-icons-outlined text-3xl">{cat.icon}</span>
-              </div>
+              <cat.icon className="h-10 w-10 text-[var(--primary)] mb-4 group-hover:scale-110 transition-transform" />
               <span className="font-bold text-sm tracking-tight text-[var(--on-surface)]">{cat.label}</span>
             </Link>
           ))}

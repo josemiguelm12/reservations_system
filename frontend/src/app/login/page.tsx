@@ -36,8 +36,10 @@ export default function LoginPage() {
 
     setLoading(true);
     try {
-      await login(form.email, form.password);
-      router.push('/dashboard');
+      const loggedUser = await login(form.email, form.password);
+      // Partners & Admins manage spaces → dashboard; Clients browse → catalog
+      const dest = loggedUser?.role === 'CLIENT' ? '/resources' : '/dashboard';
+      router.push(dest);
     } catch (err: any) {
       setApiError(err.response?.data?.message || 'Credenciales inválidas');
     } finally {

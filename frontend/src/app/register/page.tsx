@@ -7,16 +7,7 @@ import { useAuth } from '@/contexts/auth-context';
 import { registerSchema } from '@/lib/validations';
 import { Input, Textarea } from '@/components/ui/form-fields';
 import { Button } from '@/components/ui/button';
-import {
-  UserIcon,
-  BriefcaseIcon,
-  ArrowRightIcon,
-  ArrowLeftIcon,
-  CheckBadgeIcon,
-  BoltIcon,
-  ShieldCheckIcon,
-  InformationCircleIcon,
-} from '@heroicons/react/24/outline';
+import { FiUser, FiBriefcase, FiArrowRight, FiArrowLeft } from 'react-icons/fi';
 import type { ZodError } from 'zod';
 
 type Role = 'CLIENT' | 'PARTNER';
@@ -100,209 +91,194 @@ function RegisterForm() {
   const setField = (field: string, value: string) => setForm({ ...form, [field]: value });
 
   return (
-    <div className="min-h-screen bg-[var(--surface)] pt-24 pb-20 px-6">
-      <div className="max-w-5xl mx-auto">
-        {/* Branding Header */}
-        <div className="text-center mb-16">
-          <Link href="/" className="inline-block mb-6">
-            <span className="text-xl font-extrabold text-blue-900 tracking-tighter font-[var(--font-headline)]">
-              ReservasPro
-            </span>
+    <div className="min-h-screen flex items-center justify-center px-4 py-12 bg-[var(--background)]">
+      <div className="w-full max-w-md">
+        <div className="text-center mb-8">
+          <Link href="/" className="inline-flex items-center gap-2 mb-6">
+            <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-[var(--primary)] to-blue-500 flex items-center justify-center shadow-sm">
+              <span className="material-icons-outlined text-white" style={{ fontSize: '22px' }}>
+                event_available
+              </span>
+            </div>
           </Link>
-          <h1 className="text-4xl md:text-5xl font-extrabold tracking-tighter text-[var(--primary)] mb-4">
-            Empieza tu experiencia
-          </h1>
-          <p className="text-[var(--on-surface-variant)] font-medium text-lg">
-            {step === 'role' ? 'Selecciona tu perfil para continuar con el registro' : role === 'PARTNER' ? 'Registra tu negocio para ofrecer espacios' : 'Regístrate para reservar espacios'}
+          <h1 className="text-2xl font-bold text-[var(--foreground)]">Crear Cuenta</h1>
+          <p className="text-sm text-[var(--muted-foreground)] mt-1">
+            {step === 'role'
+              ? '¿Cómo quieres usar ReservasPro?'
+              : role === 'PARTNER'
+                ? 'Registra tu negocio para ofrecer espacios'
+                : 'Regístrate para reservar espacios'}
           </p>
         </div>
 
         {step === 'role' ? (
-          /* ─── Role Selection (Bento Grid) ─── */
-          <div className="grid md:grid-cols-2 gap-8 mb-16 max-w-3xl mx-auto">
-            {/* User Card */}
+          /* ─── Role Selection ─── */
+          <div className="space-y-4">
             <button
               onClick={() => handleSelectRole('CLIENT')}
-              className="group relative overflow-hidden bg-[var(--surface-container-lowest)] p-10 rounded-xl transition-all duration-300 hover:bg-[var(--surface-container-high)] border-none outline-none text-left focus:ring-2 focus:ring-[var(--primary)] shadow-[var(--shadow-sm)] hover:shadow-[var(--shadow-lg)] cursor-pointer"
+              className="w-full group p-6 bg-white rounded-2xl border-2 border-[var(--border)] hover:border-[var(--primary)] transition-all duration-200 text-left cursor-pointer hover:shadow-lg"
             >
-              <div className="relative z-10">
-                <div className="w-16 h-16 bg-[var(--primary-fixed-dim)] rounded-xl flex items-center justify-center mb-6 text-[var(--primary)] group-hover:scale-110 transition-transform duration-300">
-                  <UserIcon className="h-8 w-8" />
+              <div className="flex items-start gap-4">
+                <div className="h-12 w-12 rounded-xl bg-blue-100 text-blue-600 flex items-center justify-center flex-shrink-0 group-hover:bg-[var(--primary)] group-hover:text-white transition-colors">
+                  <FiUser className="h-6 w-6" />
                 </div>
-                <h2 className="text-2xl font-bold text-[var(--on-surface)] mb-3">Soy Cliente</h2>
-                <p className="text-[var(--on-surface-variant)] leading-relaxed mb-6">
-                  Busca y reserva los mejores espacios
-                </p>
-                <span className="inline-flex items-center text-[var(--primary)] font-bold gap-2">
-                  Seleccionar perfil
-                  <ArrowRightIcon className="h-4 w-4" />
-                </span>
-              </div>
-              <div className="absolute -right-8 -bottom-8 opacity-5 text-[var(--primary)]">
-                <UserIcon className="h-40 w-40" />
+                <div className="flex-1">
+                  <h3 className="font-bold text-[var(--foreground)] text-lg mb-1">Soy Cliente</h3>
+                  <p className="text-sm text-[var(--muted-foreground)] leading-relaxed">
+                    Quiero buscar y reservar espacios, canchas, salas y más.
+                  </p>
+                </div>
+                <FiArrowRight className="h-5 w-5 text-[var(--muted-foreground)] group-hover:text-[var(--primary)] mt-1 transition-transform group-hover:translate-x-1" />
               </div>
             </button>
 
-            {/* Partner Card */}
             <button
               onClick={() => handleSelectRole('PARTNER')}
-              className="group relative overflow-hidden bg-[var(--surface-container-lowest)] p-10 rounded-xl transition-all duration-300 hover:bg-[var(--surface-container-high)] border-none outline-none text-left focus:ring-2 focus:ring-[var(--secondary)] shadow-[var(--shadow-sm)] hover:shadow-[var(--shadow-lg)] cursor-pointer"
+              className="w-full group p-6 bg-white rounded-2xl border-2 border-[var(--border)] hover:border-emerald-500 transition-all duration-200 text-left cursor-pointer hover:shadow-lg"
             >
-              <div className="relative z-10">
-                <div className="w-16 h-16 bg-[var(--secondary-container)] rounded-xl flex items-center justify-center mb-6 text-[var(--secondary)] group-hover:scale-110 transition-transform duration-300">
-                  <BriefcaseIcon className="h-8 w-8" />
+              <div className="flex items-start gap-4">
+                <div className="h-12 w-12 rounded-xl bg-emerald-100 text-emerald-600 flex items-center justify-center flex-shrink-0 group-hover:bg-emerald-500 group-hover:text-white transition-colors">
+                  <FiBriefcase className="h-6 w-6" />
                 </div>
-                <h2 className="text-2xl font-bold text-[var(--on-surface)] mb-3">Soy Socio</h2>
-                <p className="text-[var(--on-surface-variant)] leading-relaxed mb-6">
-                  Publica tus recursos y gestiona tus reservas
-                </p>
-                <span className="inline-flex items-center text-[var(--secondary)] font-bold gap-2">
-                  Crear cuenta de empresa
-                  <ArrowRightIcon className="h-4 w-4" />
-                </span>
-              </div>
-              <div className="absolute -right-8 -bottom-8 opacity-5 text-[var(--secondary)]">
-                <BriefcaseIcon className="h-40 w-40" />
+                <div className="flex-1">
+                  <h3 className="font-bold text-[var(--foreground)] text-lg mb-1">Soy Socio</h3>
+                  <p className="text-sm text-[var(--muted-foreground)] leading-relaxed">
+                    Tengo espacios o servicios que quiero publicar y recibir reservas.
+                  </p>
+                </div>
+                <FiArrowRight className="h-5 w-5 text-[var(--muted-foreground)] group-hover:text-emerald-500 mt-1 transition-transform group-hover:translate-x-1" />
               </div>
             </button>
           </div>
         ) : (
           /* ─── Registration Form ─── */
-          <div className="max-w-2xl mx-auto">
+          <>
             <button
               onClick={() => setStep('role')}
-              className="flex items-center gap-1 text-sm text-[var(--on-surface-variant)] hover:text-[var(--on-surface)] mb-4 transition-colors cursor-pointer font-bold"
+              className="flex items-center gap-1 text-sm text-[var(--muted-foreground)] hover:text-[var(--foreground)] mb-4 transition-colors cursor-pointer"
             >
-              <ArrowLeftIcon className="h-4 w-4" />
+              <FiArrowLeft className="h-4 w-4" />
               Cambiar tipo de cuenta
             </button>
 
-            <div className="bg-[var(--surface-container-low)] p-8 md:p-12 rounded-xl">
-              <div className="flex items-center gap-4 mb-8">
-                <span className="w-8 h-8 rounded-full bg-[var(--primary)] text-white flex items-center justify-center font-bold text-sm">2</span>
-                <h3 className="text-xl font-bold">Datos de registro</h3>
+            {/* Role indicator */}
+            <div className={`flex items-center gap-3 p-3 rounded-xl mb-4 ${
+              role === 'PARTNER'
+                ? 'bg-emerald-50 border border-emerald-200'
+                : 'bg-blue-50 border border-blue-200'
+            }`}>
+              <div className={`h-8 w-8 rounded-lg flex items-center justify-center text-white ${
+                role === 'PARTNER' ? 'bg-emerald-500' : 'bg-[var(--primary)]'
+              }`}>
+                {role === 'PARTNER' ? <FiBriefcase className="h-4 w-4" /> : <FiUser className="h-4 w-4" />}
               </div>
-
-              <form onSubmit={handleSubmit} className="space-y-6">
-                {apiError && (
-                  <div className="p-3 rounded-lg bg-[var(--error-container)] border border-[var(--error)]/20 text-sm text-[var(--on-error-container)]">
-                    {apiError}
-                  </div>
-                )}
-
-                {/* Common Fields */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <Input
-                    label="Full name"
-                    placeholder="Ej: Juan Pérez"
-                    value={form.fullName}
-                    onChange={(e) => setField('fullName', e.target.value)}
-                    error={errors.fullName}
-                  />
-                  <Input
-                    label="Email"
-                    type="email"
-                    placeholder="juan@ejemplo.com"
-                    value={form.email}
-                    onChange={(e) => setField('email', e.target.value)}
-                    error={errors.email}
-                  />
-                </div>
-
-                {/* Partner Specific */}
-                {role === 'PARTNER' && (
-                  <div className="pt-6 border-t border-[var(--outline-variant)]/20 space-y-6">
-                    <div className="bg-[var(--surface-container)] p-6 rounded-lg space-y-6">
-                      <p className="text-sm font-semibold text-[var(--secondary)] flex items-center gap-2">
-                        <InformationCircleIcon className="h-5 w-5" />
-                        Información de Socio Profesional
-                      </p>
-                      <Input
-                        label="Business Name *"
-                        placeholder="Nombre comercial de tu negocio"
-                        value={form.businessName}
-                        onChange={(e) => setField('businessName', e.target.value)}
-                        error={errors.businessName}
-                      />
-                      <Textarea
-                        label="Descripción del negocio"
-                        placeholder="Cuéntanos sobre tu negocio..."
-                        value={form.businessDescription}
-                        onChange={(e) => setField('businessDescription', e.target.value)}
-                        error={errors.businessDescription}
-                      />
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <Input
-                          label="Phone"
-                          placeholder="+34 000 000 000"
-                          value={form.phone}
-                          onChange={(e) => setField('phone', e.target.value)}
-                          error={errors.phone}
-                        />
-                        <Input
-                          label="Address"
-                          placeholder="Dirección física"
-                          value={form.address}
-                          onChange={(e) => setField('address', e.target.value)}
-                          error={errors.address}
-                        />
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                {/* Passwords */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <Input
-                    label="Password"
-                    type="password"
-                    placeholder="••••••••"
-                    value={form.password}
-                    onChange={(e) => setField('password', e.target.value)}
-                    error={errors.password}
-                  />
-                  <Input
-                    label="Confirm Password"
-                    type="password"
-                    placeholder="••••••••"
-                    value={form.confirmPassword}
-                    onChange={(e) => setField('confirmPassword', e.target.value)}
-                    error={errors.confirmPassword}
-                  />
-                </div>
-
-                {/* Submit */}
-                <div className="pt-6">
-                  <Button type="submit" loading={loading} fullWidth size="lg">
-                    Crear cuenta en ReservasPro
-                  </Button>
-                  <p className="text-center mt-4 text-sm text-[var(--on-surface-variant)]">
-                    ¿Ya tienes cuenta? <Link className="text-[var(--primary)] font-bold hover:underline" href="/login">Inicia sesión</Link>
-                  </p>
-                </div>
-              </form>
+              <span className={`text-sm font-semibold ${
+                role === 'PARTNER' ? 'text-emerald-700' : 'text-blue-700'
+              }`}>
+                {role === 'PARTNER' ? 'Registro como Socio' : 'Registro como Cliente'}
+              </span>
             </div>
-          </div>
+
+            <form
+              onSubmit={handleSubmit}
+              className="bg-white rounded-xl border border-[var(--border)] p-6 shadow-sm space-y-4"
+            >
+              {apiError && (
+                <div className="p-3 rounded-lg bg-red-50 border border-red-200 text-sm text-red-700">
+                  {apiError}
+                </div>
+              )}
+
+              <Input
+                label="Nombre completo"
+                placeholder="Juan García"
+                value={form.fullName}
+                onChange={(e) => setField('fullName', e.target.value)}
+                error={errors.fullName}
+              />
+
+              <Input
+                label="Email"
+                type="email"
+                placeholder="tu@email.com"
+                value={form.email}
+                onChange={(e) => setField('email', e.target.value)}
+                error={errors.email}
+              />
+
+              <Input
+                label="Contraseña"
+                type="password"
+                placeholder="Mínimo 8 caracteres"
+                value={form.password}
+                onChange={(e) => setField('password', e.target.value)}
+                error={errors.password}
+              />
+
+              <Input
+                label="Confirmar Contraseña"
+                type="password"
+                placeholder="Repite tu contraseña"
+                value={form.confirmPassword}
+                onChange={(e) => setField('confirmPassword', e.target.value)}
+                error={errors.confirmPassword}
+              />
+
+              {/* Partner-only fields */}
+              {role === 'PARTNER' && (
+                <div className="space-y-4 pt-2 border-t border-[var(--border)]">
+                  <p className="text-xs font-semibold text-[var(--muted-foreground)] uppercase tracking-wider">
+                    Datos del negocio
+                  </p>
+
+                  <Input
+                    label="Nombre del negocio *"
+                    placeholder="Mi Empresa S.R.L."
+                    value={form.businessName}
+                    onChange={(e) => setField('businessName', e.target.value)}
+                    error={errors.businessName}
+                  />
+
+                  <Textarea
+                    label="Descripción del negocio"
+                    placeholder="Cuéntanos sobre tu negocio..."
+                    value={form.businessDescription}
+                    onChange={(e) => setField('businessDescription', e.target.value)}
+                    error={errors.businessDescription}
+                  />
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <Input
+                      label="Teléfono"
+                      placeholder="+1 809-555-0123"
+                      value={form.phone}
+                      onChange={(e) => setField('phone', e.target.value)}
+                      error={errors.phone}
+                    />
+                    <Input
+                      label="Dirección"
+                      placeholder="Calle Principal #10"
+                      value={form.address}
+                      onChange={(e) => setField('address', e.target.value)}
+                      error={errors.address}
+                    />
+                  </div>
+                </div>
+              )}
+
+              <Button type="submit" loading={loading} fullWidth size="lg">
+                {role === 'PARTNER' ? 'Registrar mi Negocio' : 'Crear Cuenta'}
+              </Button>
+            </form>
+          </>
         )}
 
-        {/* Value Proposition */}
-        <div className="mt-24 grid md:grid-cols-3 gap-12 max-w-4xl mx-auto">
-          <div className="space-y-4">
-            <CheckBadgeIcon className="h-8 w-8 text-[var(--tertiary)]" />
-            <h4 className="font-bold text-lg">Espacios Curados</h4>
-            <p className="text-sm text-[var(--on-surface-variant)] leading-relaxed">Seleccionamos solo los mejores espacios arquitectónicos para tus necesidades.</p>
-          </div>
-          <div className="space-y-4">
-            <BoltIcon className="h-8 w-8 text-[var(--primary)]" />
-            <h4 className="font-bold text-lg">Reserva Inmediata</h4>
-            <p className="text-sm text-[var(--on-surface-variant)] leading-relaxed">Confirmación en tiempo real sin esperas ni llamadas innecesarias.</p>
-          </div>
-          <div className="space-y-4">
-            <ShieldCheckIcon className="h-8 w-8 text-[var(--secondary)]" />
-            <h4 className="font-bold text-lg">Garantía Socio</h4>
-            <p className="text-sm text-[var(--on-surface-variant)] leading-relaxed">Protección integral y soporte premium para todos nuestros partners.</p>
-          </div>
-        </div>
+        <p className="text-center text-sm text-[var(--muted-foreground)] mt-6">
+          ¿Ya tienes cuenta?{' '}
+          <Link href="/login" className="text-[var(--primary)] font-medium hover:underline">
+            Inicia Sesión
+          </Link>
+        </p>
       </div>
     </div>
   );

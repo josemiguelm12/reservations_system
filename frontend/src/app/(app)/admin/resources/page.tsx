@@ -1,7 +1,8 @@
 'use client';
 
 import { useState } from 'react';
-import { useResources, useCreateResource, useUpdateResource, useDeleteResource } from '@/hooks/use-api';
+import { useResources, useMyResources, useCreateResource, useUpdateResource, useDeleteResource } from '@/hooks/use-api';
+import { useAuth } from '@/contexts/auth-context';
 import { Card, CardBody, CardHeader } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input, Textarea, Select } from '@/components/ui/form-fields';
@@ -35,7 +36,11 @@ const emptyForm = {
 
 export default function AdminResourcesPage() {
   const [page, setPage] = useState(1);
-  const { data, isLoading } = useResources({ page, limit: 10 });
+  const { user } = useAuth();
+  const isPartner = user?.role === 'PARTNER';
+  const allResources = useResources({ page, limit: 10 });
+  const myResources = useMyResources({ page, limit: 10 });
+  const { data, isLoading } = isPartner ? myResources : allResources;
   const createResource = useCreateResource();
   const updateResource = useUpdateResource();
   const deleteResource = useDeleteResource();
@@ -101,7 +106,7 @@ export default function AdminResourcesPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-[var(--text-primary)]">Gestionar Recursos</h1>
-          <p className="text-[var(--text-secondary)] mt-1">Administra los recursos del sistema</p>
+          <p className="text-[var(--text-secondary)] mt-1">{isPartner ? 'Gestiona tus espacios, precios e imágenes' : 'Administra los recursos del sistema'}</p>
         </div>
         <Button onClick={openCreate}>
           <PlusIcon className="h-4 w-4" />

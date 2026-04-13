@@ -44,6 +44,21 @@ export function useResources(filters: ResourceFilters = {}) {
   });
 }
 
+export function useMyResources(filters: ResourceFilters = {}) {
+  return useQuery<PaginatedResponse<Resource>>({
+    queryKey: ['my-resources', filters],
+    queryFn: async () => {
+      const params = new URLSearchParams();
+      if (filters.page) params.set('page', String(filters.page));
+      if (filters.limit) params.set('limit', String(filters.limit));
+      if (filters.type) params.set('type', filters.type);
+      if (filters.search) params.set('search', filters.search);
+      const { data } = await api.get(`/resources/my?${params}`);
+      return data;
+    },
+  });
+}
+
 export function useResource(id: string) {
   return useQuery<Resource>({
     queryKey: ['resources', id],

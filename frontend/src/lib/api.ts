@@ -28,15 +28,6 @@ export const getAccessToken = () => accessToken;
 // Request interceptor - attach access token
 api.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
-  
-    if (config.url?.includes('refresh')) {
-      ({
-        url: config.url,
-        withCredentials: config.withCredentials,
-        browserCookies: document.cookie,
-      });
-    }
-    
     if (accessToken && config.headers) {
       config.headers.Authorization = `Bearer ${accessToken}`;
     }
@@ -70,6 +61,12 @@ api.interceptors.response.use(
       _retry?: boolean;
     };
 
+    // Don't try to refresh if the failing request IS the refresh endpoint
+    const isRefreshRequest = originalRequest.url?.includes('/auth/refresh');
+    if (isRefreshRequest) {
+      return Promise.reject(error);
+    }
+
     if (error.response?.status === 401 && !originalRequest._retry) {
       if (isRefreshing) {
         return new Promise((resolve, reject) => {
@@ -98,9 +95,8 @@ api.interceptors.response.use(
       } catch (refreshError) {
         processQueue(refreshError, null);
         setAccessToken(null);
-        if (typeof window !== 'undefined') {
-          window.location.href = '/login';
-        }
+        // Don't redirect to login — let each page/component decide
+        // what to do when the user is unauthenticated
         return Promise.reject(refreshError);
       } finally {
         isRefreshing = false;

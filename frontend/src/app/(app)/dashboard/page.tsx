@@ -15,16 +15,18 @@ export default function DashboardPage() {
   const { user, isLoading: authLoading, isAuthenticated } = useAuth();
   const router = useRouter();
   const isAdmin = user?.role === 'ADMIN';
+  const isPartner = user?.role === 'PARTNER';
+  const canAccessDashboard = isAdmin || isPartner;
 
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {
       router.push('/login');
     }
-    // Clients don't have a dashboard — redirect to resources
-    if (!authLoading && isAuthenticated && !isAdmin) {
+    // Only clients get redirected — partners AND admins stay on dashboard
+    if (!authLoading && isAuthenticated && !canAccessDashboard) {
       router.push('/resources');
     }
-  }, [authLoading, isAuthenticated, isAdmin, router]);
+  }, [authLoading, isAuthenticated, canAccessDashboard, router]);
 
   if (authLoading) {
     return (
@@ -36,10 +38,10 @@ export default function DashboardPage() {
 
   if (!isAuthenticated || !user) return null;
 
-  return <DashboardContent user={user} isAdmin={isAdmin} />;
+  return <DashboardContent user={user} isAdmin={isAdmin} isPartner={isPartner} />;
 }
 
-function DashboardContent({ user, isAdmin }: { user: any; isAdmin: boolean }) {
+function DashboardContent({ user, isAdmin, isPartner }: { user: any; isAdmin: boolean; isPartner: boolean }) {
   const router = useRouter();
   const { data: stats, isLoading: statsLoading } = useDashboardStats();
   const { data: recentReservations, isLoading: resLoading } = useReservations({
@@ -51,21 +53,27 @@ function DashboardContent({ user, isAdmin }: { user: any; isAdmin: boolean }) {
     (r) => r.status === 'CONFIRMED' || r.status === 'PENDING'
   ).length || 0;
 
+  const businessName = user?.partnerProfile?.businessName;
+
   return (
     <div className="space-y-8">
       {/* Welcome section */}
       <div>
         <h1 className="text-2xl font-bold text-[var(--foreground)]">
-          Welcome back, {user?.fullName?.split(' ')[0]}
+          {isPartner
+            ? `Bienvenido, ${businessName || user?.fullName?.split(' ')[0]}`
+            : `Welcome back, ${user?.fullName?.split(' ')[0]}`}
         </h1>
         <p className="text-[var(--muted-foreground)] mt-1">
-          You have {upcomingCount} reservation{upcomingCount !== 1 ? 's' : ''} scheduled for this week.
+          {isPartner
+            ? `Tienes ${upcomingCount} reserva${upcomingCount !== 1 ? 's' : ''} pendiente${upcomingCount !== 1 ? 's' : ''} en tus espacios.`
+            : `You have ${upcomingCount} reservation${upcomingCount !== 1 ? 's' : ''} scheduled for this week.`}
         </p>
       </div>
 
-      {/* Stats cards - only for admin */}
-      {isAdmin && stats && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      {/* Stats cards — visible for admin and partner */}
+      {(isAdmin || isPartner) && stats && (
+        <div className={`grid grid-cols-1 sm:grid-cols-2 ${isAdmin ? 'lg:grid-cols-4' : 'lg:grid-cols-3'} gap-4`}>
           <StatCard
             icon={<CalendarDaysIcon className="h-5 w-5" />}
             label="Total Reservas"
@@ -84,23 +92,25 @@ function DashboardContent({ user, isAdmin }: { user: any; isAdmin: boolean }) {
           />
           <StatCard
             icon={<ArchiveBoxIcon className="h-5 w-5" />}
-            label="Recursos"
+            label={isPartner ? 'Mis Recursos' : 'Recursos'}
             value={String(stats.totalResources)}
             sub={`${stats.activeResources} activos`}
             color="text-violet-600"
             bg="bg-violet-50"
           />
-          <StatCard
-            icon={<UserGroupIcon className="h-5 w-5" />}
-            label="Usuarios"
-            value={String(stats.totalUsers)}
-            sub="registrados"
-            color="text-amber-600"
-            bg="bg-amber-50"
-          />
+          {isAdmin && (
+            <StatCard
+              icon={<UserGroupIcon className="h-5 w-5" />}
+              label="Usuarios"
+              value={String(stats.totalUsers)}
+              sub="registrados"
+              color="text-amber-600"
+              bg="bg-amber-50"
+            />
+          )}
         </div>
       )}
-      {isAdmin && statsLoading && (
+      {(isAdmin || isPartner) && statsLoading && (
         <div className="flex justify-center py-8">
           <LoadingSpinner />
         </div>
@@ -109,12 +119,14 @@ function DashboardContent({ user, isAdmin }: { user: any; isAdmin: boolean }) {
       {/* Upcoming Reservations */}
       <div>
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-semibold text-[var(--foreground)]">Upcoming Reservations</h2>
+          <h2 className="text-lg font-semibold text-[var(--foreground)]">
+            {isPartner ? 'Reservas en mis espacios' : 'Upcoming Reservations'}
+          </h2>
           <Link
-            href="/reservations"
+            href={isPartner ? '/admin/reservations' : '/reservations'}
             className="flex items-center gap-1.5 text-sm font-medium text-[var(--primary)] hover:text-[var(--primary-hover)] transition-colors"
           >
-            View Calendar
+            {isPartner ? 'Ver todas' : 'View Calendar'}
             <ArrowRightIcon className="h-4 w-4" />
           </Link>
         </div>
@@ -127,10 +139,21 @@ function DashboardContent({ user, isAdmin }: { user: any; isAdmin: boolean }) {
           <Card>
             <CardBody>
               <div className="text-center py-8 text-sm text-[var(--muted-foreground)]">
-                No tienes reservas aún.{' '}
-                <Link href="/resources" className="text-[var(--primary)] hover:underline font-medium">
-                  Explorar recursos
-                </Link>
+                {isPartner ? (
+                  <>
+                    Aún no tienes reservas en tus espacios.{' '}
+                    <Link href="/admin/resources" className="text-[var(--primary)] hover:underline font-medium">
+                      Gestionar mis recursos
+                    </Link>
+                  </>
+                ) : (
+                  <>
+                    No tienes reservas aún.{' '}
+                    <Link href="/resources" className="text-[var(--primary)] hover:underline font-medium">
+                      Explorar recursos
+                    </Link>
+                  </>
+                )}
               </div>
             </CardBody>
           </Card>
@@ -158,6 +181,12 @@ function DashboardContent({ user, isAdmin }: { user: any; isAdmin: boolean }) {
                           year: 'numeric',
                         })}
                       </div>
+                      {/* Show who booked (partner view) */}
+                      {isPartner && res.user && (
+                        <p className="text-xs text-[var(--muted-foreground)] mt-1">
+                          Reservado por: {res.user.fullName}
+                        </p>
+                      )}
                     </div>
                     <span
                       className={`text-xs px-2.5 py-1 rounded-[var(--radius)] font-medium ${
@@ -206,88 +235,156 @@ function DashboardContent({ user, isAdmin }: { user: any; isAdmin: boolean }) {
 
       {/* Quick Actions */}
       <div>
-        <h2 className="text-lg font-semibold text-[var(--foreground)] mb-4">Quick Actions</h2>
+        <h2 className="text-lg font-semibold text-[var(--foreground)] mb-4">
+          {isPartner ? 'Acciones Rápidas' : 'Quick Actions'}
+        </h2>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          <Link href="/resources" className="group">
-            <Card hover>
-              <CardBody>
-                <div className="flex items-start gap-4">
-                  <div className="h-10 w-10 rounded-[var(--radius)] bg-[var(--primary-light)] text-[var(--primary)] flex items-center justify-center flex-shrink-0">
-                    <span className="material-icons-outlined" style={{ fontSize: '20px' }}>add_circle</span>
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <h3 className="font-semibold text-sm text-[var(--foreground)] mb-0.5">
-                      New Reservation
-                    </h3>
-                    <p className="text-xs text-[var(--muted-foreground)] line-clamp-2">
-                      Book a suite, studio, or workspace in just a few clicks.
-                    </p>
-                  </div>
-                </div>
-              </CardBody>
-            </Card>
-          </Link>
-
-          <Link href="/reservations" className="group">
-            <Card hover>
-              <CardBody>
-                <div className="flex items-start gap-4">
-                  <div className="h-10 w-10 rounded-[var(--radius)] bg-emerald-50 text-emerald-600 flex items-center justify-center flex-shrink-0">
-                    <span className="material-icons-outlined" style={{ fontSize: '20px' }}>qr_code_scanner</span>
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <h3 className="font-semibold text-sm text-[var(--foreground)] mb-0.5">
-                      Scan QR Access
-                    </h3>
-                    <p className="text-xs text-[var(--muted-foreground)] line-clamp-2">
-                      Instantly unlock your reserved spaces using your digital key.
-                    </p>
-                  </div>
-                </div>
-              </CardBody>
-            </Card>
-          </Link>
-
-          <Link href="/resources" className="group">
-            <Card hover>
-              <CardBody>
-                <div className="flex items-start gap-4">
-                  <div className="h-10 w-10 rounded-[var(--radius)] bg-violet-50 text-violet-600 flex items-center justify-center flex-shrink-0">
-                    <span className="material-icons-outlined" style={{ fontSize: '20px' }}>explore</span>
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <h3 className="font-semibold text-sm text-[var(--foreground)] mb-0.5">
-                      Browse Catalog
-                    </h3>
-                    <p className="text-xs text-[var(--muted-foreground)] line-clamp-2">
-                      Explore our premium fleet of amenities and high-end services.
-                    </p>
-                  </div>
-                </div>
-              </CardBody>
-            </Card>
-          </Link>
-
-          {isAdmin && (
-            <Link href="/admin/stats" className="group">
-              <Card hover>
-                <CardBody>
-                  <div className="flex items-start gap-4">
-                    <div className="h-10 w-10 rounded-[var(--radius)] bg-amber-50 text-amber-600 flex items-center justify-center flex-shrink-0">
-                      <span className="material-icons-outlined" style={{ fontSize: '20px' }}>analytics</span>
+          {isPartner ? (
+            <>
+              <Link href="/admin/resources" className="group">
+                <Card hover>
+                  <CardBody>
+                    <div className="flex items-start gap-4">
+                      <div className="h-10 w-10 rounded-[var(--radius)] bg-[var(--primary-light)] text-[var(--primary)] flex items-center justify-center flex-shrink-0">
+                        <span className="material-icons-outlined" style={{ fontSize: '20px' }}>inventory_2</span>
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <h3 className="font-semibold text-sm text-[var(--foreground)] mb-0.5">
+                          Mis Recursos
+                        </h3>
+                        <p className="text-xs text-[var(--muted-foreground)] line-clamp-2">
+                          Gestiona tus espacios, precios e imágenes.
+                        </p>
+                      </div>
                     </div>
-                    <div className="flex-1 min-w-0">
-                      <h3 className="font-semibold text-sm text-[var(--foreground)] mb-0.5">
-                        Estadísticas
-                      </h3>
-                      <p className="text-xs text-[var(--muted-foreground)] line-clamp-2">
-                        Ingresos y métricas de la plataforma
-                      </p>
+                  </CardBody>
+                </Card>
+              </Link>
+
+              <Link href="/admin/schedules" className="group">
+                <Card hover>
+                  <CardBody>
+                    <div className="flex items-start gap-4">
+                      <div className="h-10 w-10 rounded-[var(--radius)] bg-emerald-50 text-emerald-600 flex items-center justify-center flex-shrink-0">
+                        <span className="material-icons-outlined" style={{ fontSize: '20px' }}>schedule</span>
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <h3 className="font-semibold text-sm text-[var(--foreground)] mb-0.5">
+                          Horarios
+                        </h3>
+                        <p className="text-xs text-[var(--muted-foreground)] line-clamp-2">
+                          Configura la disponibilidad de tus espacios.
+                        </p>
+                      </div>
                     </div>
-                  </div>
-                </CardBody>
-              </Card>
-            </Link>
+                  </CardBody>
+                </Card>
+              </Link>
+
+              <Link href="/admin/reservations" className="group">
+                <Card hover>
+                  <CardBody>
+                    <div className="flex items-start gap-4">
+                      <div className="h-10 w-10 rounded-[var(--radius)] bg-violet-50 text-violet-600 flex items-center justify-center flex-shrink-0">
+                        <span className="material-icons-outlined" style={{ fontSize: '20px' }}>event_note</span>
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <h3 className="font-semibold text-sm text-[var(--foreground)] mb-0.5">
+                          Reservas Recibidas
+                        </h3>
+                        <p className="text-xs text-[var(--muted-foreground)] line-clamp-2">
+                          Revisa y gestiona las reservas en tus espacios.
+                        </p>
+                      </div>
+                    </div>
+                  </CardBody>
+                </Card>
+              </Link>
+            </>
+          ) : (
+            <>
+              <Link href="/resources" className="group">
+                <Card hover>
+                  <CardBody>
+                    <div className="flex items-start gap-4">
+                      <div className="h-10 w-10 rounded-[var(--radius)] bg-[var(--primary-light)] text-[var(--primary)] flex items-center justify-center flex-shrink-0">
+                        <span className="material-icons-outlined" style={{ fontSize: '20px' }}>add_circle</span>
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <h3 className="font-semibold text-sm text-[var(--foreground)] mb-0.5">
+                          New Reservation
+                        </h3>
+                        <p className="text-xs text-[var(--muted-foreground)] line-clamp-2">
+                          Book a suite, studio, or workspace in just a few clicks.
+                        </p>
+                      </div>
+                    </div>
+                  </CardBody>
+                </Card>
+              </Link>
+
+              <Link href="/reservations" className="group">
+                <Card hover>
+                  <CardBody>
+                    <div className="flex items-start gap-4">
+                      <div className="h-10 w-10 rounded-[var(--radius)] bg-emerald-50 text-emerald-600 flex items-center justify-center flex-shrink-0">
+                        <span className="material-icons-outlined" style={{ fontSize: '20px' }}>qr_code_scanner</span>
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <h3 className="font-semibold text-sm text-[var(--foreground)] mb-0.5">
+                          Scan QR Access
+                        </h3>
+                        <p className="text-xs text-[var(--muted-foreground)] line-clamp-2">
+                          Instantly unlock your reserved spaces using your digital key.
+                        </p>
+                      </div>
+                    </div>
+                  </CardBody>
+                </Card>
+              </Link>
+
+              <Link href="/resources" className="group">
+                <Card hover>
+                  <CardBody>
+                    <div className="flex items-start gap-4">
+                      <div className="h-10 w-10 rounded-[var(--radius)] bg-violet-50 text-violet-600 flex items-center justify-center flex-shrink-0">
+                        <span className="material-icons-outlined" style={{ fontSize: '20px' }}>explore</span>
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <h3 className="font-semibold text-sm text-[var(--foreground)] mb-0.5">
+                          Browse Catalog
+                        </h3>
+                        <p className="text-xs text-[var(--muted-foreground)] line-clamp-2">
+                          Explore our premium fleet of amenities and high-end services.
+                        </p>
+                      </div>
+                    </div>
+                  </CardBody>
+                </Card>
+              </Link>
+
+              {isAdmin && (
+                <Link href="/admin/stats" className="group">
+                  <Card hover>
+                    <CardBody>
+                      <div className="flex items-start gap-4">
+                        <div className="h-10 w-10 rounded-[var(--radius)] bg-amber-50 text-amber-600 flex items-center justify-center flex-shrink-0">
+                          <span className="material-icons-outlined" style={{ fontSize: '20px' }}>analytics</span>
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <h3 className="font-semibold text-sm text-[var(--foreground)] mb-0.5">
+                            Estadísticas
+                          </h3>
+                          <p className="text-xs text-[var(--muted-foreground)] line-clamp-2">
+                            Ingresos y métricas de la plataforma
+                          </p>
+                        </div>
+                      </div>
+                    </CardBody>
+                  </Card>
+                </Link>
+              )}
+            </>
           )}
         </div>
       </div>
