@@ -64,7 +64,7 @@ export function Navbar() {
           {/* Left: Logo + Desktop Nav */}
           <div className="flex items-center gap-8">
             <Link href={isPartnerOrAdmin ? '/dashboard' : '/resources'} className="flex items-center gap-2.5 flex-shrink-0">
-              <span className="text-xl font-extrabold text-blue-900 tracking-tighter font-[var(--font-headline)]">
+              <span className="text-xl font-extrabold text-blue-900 tracking-tighter font-[family-name:var(--font-manrope)]">
                 ReservasPro
               </span>
             </Link>

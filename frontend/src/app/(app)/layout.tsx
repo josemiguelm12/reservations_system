@@ -20,7 +20,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   if (!user) return null;
 
   return (
-    <div className="min-h-screen bg-[var(--background)]">
+    <div className="min-h-screen bg-[var(--background)] font-[family-name:var(--font-manrope)]">
       <Navbar />
       <main className="max-w-[1400px] mx-auto px-4 sm:px-6 py-6 lg:py-8 animate-fade-in">
         {children}
