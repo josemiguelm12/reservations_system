@@ -8,7 +8,7 @@ export default function ResourcesLayout({
   return (
     <div className="min-h-screen bg-[var(--background)]">
       <PublicNavbar />
-      <main className="max-w-[1400px] mx-auto px-4 sm:px-6 py-6 lg:py-8">
+      <main className="max-w-[1400px] mx-auto px-4 sm:px-6 pt-24 pb-6 lg:pb-8">
         {children}
       </main>
     </div>

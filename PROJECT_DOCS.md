@@ -1,7 +1,7 @@
 # ReservasPro — Documentación del Proyecto
 
-> **Plataforma SaaS de gestión de reservas** con backend NestJS, frontend Next.js, base de datos PostgreSQL y pagos con Stripe.  
-> Última actualización: 13 de marzo de 2026
+> **Plataforma de reservas y pagos online** con backend NestJS, frontend Next.js, base de datos PostgreSQL y pagos con Stripe.  
+> Última actualización: 14 de abril de 2026
 
 ---
 
@@ -30,9 +30,9 @@ ReservasPro es una plataforma de reservas que permite a los usuarios explorar re
 
 | Rol | Permisos |
 |-----|----------|
-| **CLIENT** | Explorar recursos, crear/cancelar reservas, ver historial, actualizar perfil |
-| **USER** | Igual que CLIENT (rol legacy) |
-| **ADMIN** | Todo lo anterior + gestionar recursos, horarios, usuarios, ver estadísticas, confirmar/cancelar reservas |
+| **CLIENT** | Explorar recursos (público), crear/cancelar reservas, ver historial, escribir reseñas (requiere reserva completada), actualizar perfil |
+| **PARTNER** | Todo lo anterior + gestionar sus propios recursos, ver estadísticas de sus recursos, acceso al dashboard |
+| **ADMIN** | Acceso total: gestionar todos los recursos, horarios, reservas, usuarios, ver estadísticas globales, confirmar/cancelar reservas, eliminar reseñas |
 
 ---
 
@@ -77,6 +77,7 @@ graph LR
 | **Seguridad** | Helmet, CORS, Rate Limiting (`@nestjs/throttler`: 100 req/min) |
 | **Pagos** | Stripe (Payment Intents + Webhooks) |
 | **Notificaciones** | Nodemailer + Event Emitter |
+| **Reseñas** | Módulo dedicado con validación de reserva completada |
 
 ### Frontend
 | Tecnología | Detalle |
@@ -87,7 +88,10 @@ graph LR
 | **HTTP Client** | Axios (con interceptores JWT) |
 | **State Management** | React Context (Auth) + React Query (`@tanstack/react-query`) |
 | **Notificaciones UI** | Sonner (toast notifications) |
-| **Iconos** | React Icons (`react-icons`) + Material Icons Outlined |
+| **Iconos** | Heroicons v2 (`@heroicons/react`) + React Icons (`react-icons`) |
+| **Gráficos** | Recharts |
+| **Fechas** | date-fns |
+| **Pagos UI** | Stripe.js + `@stripe/react-stripe-js` |
 | **Fuente** | Inter (Google Fonts) |
 
 ---
@@ -101,10 +105,10 @@ reservations-system/
 │
 ├── backend/
 │   ├── prisma/
-│   │   └── schema.prisma       # Esquema de base de datos (6 modelos)
+│   │   └── schema.prisma       # Esquema de base de datos (7 modelos)
 │   └── src/
 │       ├── main.ts             # Bootstrap: Swagger, CORS, Helmet, ValidationPipe
-│       ├── app.module.ts       # Root module (8 feature modules)
+│       ├── app.module.ts       # Root module (9 feature modules)
 │       ├── auth/               # Registro, login, refresh, logout, JWT strategies
 │       │   ├── auth.controller.ts
 │       │   ├── auth.service.ts
@@ -114,7 +118,7 @@ reservations-system/
 │       │   ├── users.controller.ts
 │       │   ├── users.service.ts
 │       │   └── dto/
-│       ├── resources/          # CRUD de recursos (Admin), listado público
+│       ├── resources/          # CRUD de recursos (Admin/Partner), listado público
 │       │   ├── resources.controller.ts
 │       │   ├── resources.service.ts
 │       │   └── dto/
@@ -137,6 +141,11 @@ reservations-system/
 │       ├── stats/              # Dashboard stats, revenue, trends (Admin)
 │       │   ├── stats.controller.ts
 │       │   └── stats.service.ts
+│       ├── reviews/            # Reseñas con validación (1 por usuario/recurso)
+│       │   ├── reviews.controller.ts
+│       │   ├── reviews.service.ts
+│       │   ├── reviews.module.ts
+│       │   └── dto/            # CreateReviewDto, UpdateReviewDto, ReviewFilterDto
 │       ├── prisma/             # PrismaService (singleton)
 │       └── common/
 │           ├── decorators/     # @CurrentUser, @Roles
@@ -145,20 +154,24 @@ reservations-system/
 │
 └── frontend/
     └── src/
-        ├── middleware.ts        # Redireccion de rutas protegidas
+        ├── middleware.ts        # Redirección de rutas protegidas
         ├── app/
-        │   ├── layout.tsx       # Root layout: Inter font, providers, Material Icons
+        │   ├── layout.tsx       # Root layout: Inter font, providers
         │   ├── globals.css      # Design system: palette, shadows, radius, animations
-        │   ├── page.tsx         # Landing page (pública)
+        │   ├── page.tsx         # Landing page pública (PublicNavbar, featured resources)
         │   ├── login/page.tsx   # Login
         │   ├── register/page.tsx# Registro
+        │   ├── resources/       # Catálogo público (sin autenticación)
+        │   │   ├── layout.tsx   # Layout con PublicNavbar
+        │   │   ├── page.tsx     # Catálogo con filtros y categorías
+        │   │   └── [id]/page.tsx# Detalle: amenities, calendar, booking, reseñas
+        │   ├── api/auth/clear/  # Route handler Next.js: limpiar cookies de auth
         │   └── (app)/           # Rutas autenticadas (layout con Sidebar + Navbar)
         │       ├── layout.tsx   # Sidebar fijo + Navbar header + contenido con offset
-        │       ├── dashboard/page.tsx     # Dashboard con stats, reservas, quick actions
-        │       ├── resources/page.tsx     # Catálogo de recursos con filtros
+        │       ├── dashboard/page.tsx     # Dashboard Admin/Partner con stats y quick actions
         │       ├── reservations/page.tsx  # Mis reservas (tabla con acciones)
         │       ├── profile/page.tsx       # Perfil, notificaciones, pagos
-        │       └── admin/                 # Panel administrativo
+        │       └── admin/                 # Panel administrativo (solo ADMIN)
         │           ├── page.tsx           # Dashboard Admin
         │           ├── resources/         # Gestión de recursos
         │           ├── reservations/      # Gestión de reservas
@@ -167,27 +180,31 @@ reservations-system/
         │           └── stats/             # Estadísticas y analytics
         ├── components/
         │   ├── layout/
-        │   │   ├── sidebar.tsx   # Sidebar fijo: avatar, nav con Material Icons
-        │   │   └── navbar.tsx    # Header: breadcrumb, search, notificaciones, avatar
-        │   ├── ui/               # Primitivos reutilizables
+        │   │   ├── sidebar.tsx       # Sidebar fijo: avatar, nav con Heroicons
+        │   │   ├── navbar.tsx        # Header: breadcrumb, notificaciones, avatar
+        │   │   └── public-navbar.tsx # Navbar para páginas públicas (auth-aware)
+        │   ├── ui/                   # Primitivos reutilizables
         │   │   ├── button.tsx
         │   │   ├── card.tsx
         │   │   ├── badge.tsx
         │   │   ├── modal.tsx
-        │   │   ├── form-fields.tsx   # Input, Select, Textarea
+        │   │   ├── form-fields.tsx       # Input, Select, Textarea
         │   │   ├── loading-spinner.tsx
         │   │   └── empty-and-pagination.tsx
         │   └── domain/
-        │       └── resource-card.tsx  # Card de recurso + ReservationCard
+        │       ├── resource-card.tsx     # Card de recurso + ReservationCard
+        │       └── charts.tsx            # Componentes de gráficos (Recharts)
         ├── contexts/
         │   ├── auth-context.tsx   # AuthProvider: login, register, logout, refresh
+        │   ├── theme-context.tsx  # ThemeProvider: claro/oscuro con persistencia
         │   └── query-provider.tsx # React Query provider
         ├── hooks/
-        │   └── use-api.ts         # Custom hooks: useResources, useReservations, etc.
+        │   └── use-api.ts         # Custom hooks: useResources, useReservations, useReviews...
         └── lib/
             ├── api.ts             # Axios instance con interceptores JWT + refresh
-            ├── types.ts           # Interfaces TS: User, Resource, Reservation, etc.
-            └── utils.ts           # Formateo de fechas, moneda, badges, cn()
+            ├── types.ts           # Interfaces TS: User, Resource, Reservation, Review...
+            ├── utils.ts           # Formateo de fechas, moneda, badges, cn()
+            └── validations.ts     # Esquemas Zod para formularios
 ```
 
 ---
@@ -198,7 +215,7 @@ reservations-system/
 
 | Enum | Valores |
 |------|---------|
-| `UserRole` | `ADMIN`, `USER`, `CLIENT` |
+| `UserRole` | `ADMIN`, `PARTNER`, `CLIENT` |
 | `ResourceType` | `COURT`, `ROOM`, `TABLE`, `DESK`, `EQUIPMENT`, `OTHER` |
 | `ReservationStatus` | `PENDING`, `CONFIRMED`, `CANCELLED`, `COMPLETED` |
 | `PaymentStatus` | `PENDING`, `COMPLETED`, `FAILED`, `REFUNDED` |
@@ -210,8 +227,12 @@ reservations-system/
 erDiagram
     User ||--o{ Reservation : has
     User ||--o{ Payment : has
+    User ||--o| PartnerProfile : has
+    User ||--o{ Resource : owns
+    User ||--o{ Review : writes
     Resource ||--o{ Schedule : has
     Resource ||--o{ Reservation : has
+    Resource ||--o{ Review : receives
     Reservation ||--o| Payment : has
 
     User {
@@ -225,6 +246,18 @@ erDiagram
         datetime createdAt
     }
 
+    PartnerProfile {
+        uuid id PK
+        uuid userId FK_UK
+        string businessName
+        string description
+        string logoUrl
+        string phone
+        string address
+        boolean isVerified
+        datetime createdAt
+    }
+
     Resource {
         uuid id PK
         string name
@@ -233,6 +266,7 @@ erDiagram
         int capacity
         float pricePerHour
         string imageUrl
+        uuid ownerId FK
         boolean isActive
     }
 
@@ -273,14 +307,25 @@ erDiagram
         string stripePaymentId UK
         string stripeClientSecret
     }
+
+    Review {
+        uuid id PK
+        uuid resourceId FK
+        uuid userId FK
+        int rating
+        string comment
+        datetime createdAt
+    }
 ```
 
 ### Índices clave
 - `User`: email, role
-- `Resource`: type, isActive
+- `PartnerProfile`: isVerified
+- `Resource`: type, isActive, ownerId
 - `Schedule`: resourceId + dayOfWeek
-- `Reservation`: resourceId + startTime + endTime (detección de conflictos), userId, status
+- `Reservation`: resourceId + startTime + endTime (detección de conflictos), userId, status, resourceId + status
 - `Payment`: userId, status, stripePaymentId
+- `Review`: resourceId, userId + unique (resourceId, userId)
 
 ---
 
@@ -297,7 +342,7 @@ Swagger Docs: `http://localhost:3001/api/docs`
 | `POST` | `/api/auth/login` | ❌ | Login con email/password |
 | `POST` | `/api/auth/refresh` | 🍪 Cookie | Refrescar access token |
 | `POST` | `/api/auth/logout` | 🔒 JWT | Cerrar sesión |
-| `POST` | `/api/auth/me` | 🔒 JWT | Obtener perfil actual |
+| `GET` | `/api/auth/me` | 🔒 JWT | Obtener perfil actual |
 
 ### Users (`/api/users`)
 
@@ -316,7 +361,8 @@ Swagger Docs: `http://localhost:3001/api/docs`
 | Método | Ruta | Auth | Descripción |
 |--------|------|------|-------------|
 | `POST` | `/api/resources` | 🔒 Admin | Crear recurso |
-| `GET` | `/api/resources` | ❌ | Listar recursos (filtros: type, search, minPrice, maxPrice, minCapacity) |
+| `GET` | `/api/resources` | ❌ | Listar recursos públicos (filtros: type, search, minPrice, maxPrice, minCapacity) |
+| `GET` | `/api/resources/my` | 🔒 Partner | Mis recursos |
 | `GET` | `/api/resources/:id` | ❌ | Obtener recurso por ID |
 | `PATCH` | `/api/resources/:id` | 🔒 Admin | Actualizar recurso |
 | `DELETE` | `/api/resources/:id` | 🔒 Admin | Eliminar recurso |
@@ -355,6 +401,15 @@ Swagger Docs: `http://localhost:3001/api/docs`
 | `GET` | `/api/payments/my` | 🔒 JWT | Mi historial de pagos |
 | `GET` | `/api/payments/admin/all` | 🔒 Admin | Todos los pagos |
 
+### Reviews (`/api/reviews`)
+
+| Método | Ruta | Auth | Descripción |
+|--------|------|------|-------------|
+| `POST` | `/api/reviews` | 🔒 JWT | Crear reseña (requiere reserva completada) |
+| `GET` | `/api/reviews/resource/:resourceId` | ❌ | Reseñas de un recurso (paginado) |
+| `PATCH` | `/api/reviews/:id` | 🔒 JWT | Actualizar mi reseña |
+| `DELETE` | `/api/reviews/:id` | 🔒 JWT | Eliminar reseña (propia o Admin) |
+
 ### Stats (`/api/stats`) — Solo Admin
 
 | Método | Ruta | Descripción |
@@ -373,12 +428,13 @@ Swagger Docs: `http://localhost:3001/api/docs`
 
 | Ruta | Componente | Descripción |
 |------|-----------|-------------|
-| `/` | `page.tsx` | Landing page pública |
+| `/` | `page.tsx` | Landing page pública (PublicNavbar, categorías, recursos destacados) |
 | `/login` | `login/page.tsx` | Formulario de login |
 | `/register` | `register/page.tsx` | Formulario de registro |
-| `/dashboard` | `(app)/dashboard/page.tsx` | Dashboard del usuario con reservas y quick actions |
-| `/resources` | `(app)/resources/page.tsx` | Catálogo de recursos con búsqueda y filtros |
-| `/reservations` | `(app)/reservations/page.tsx` | Lista de mis reservas con acciones |
+| `/resources` | `resources/page.tsx` | Catálogo público de recursos (sin auth, con PublicNavbar) |
+| `/resources/:id` | `resources/[id]/page.tsx` | Detalle de recurso: amenities, calendario, booking, reseñas |
+| `/dashboard` | `(app)/dashboard/page.tsx` | Dashboard para Admin y Partner con stats y quick actions |
+| `/reservations` | `(app)/reservations/page.tsx` | Mis reservas con acciones |
 | `/profile` | `(app)/profile/page.tsx` | Perfil, notificaciones, métodos de pago |
 | `/admin` | `(app)/admin/page.tsx` | Dashboard administrativo |
 | `/admin/resources` | `(app)/admin/resources/` | CRUD de recursos |
@@ -391,25 +447,32 @@ Swagger Docs: `http://localhost:3001/api/docs`
 
 | Hook | Descripción |
 |------|-------------|
-| `useResources(filters)` | Listar recursos con filtros y paginación |
+| `useResources(filters)` | Listar recursos públicos con filtros y paginación |
+| `useMyResources(filters)` | Mis recursos como Partner |
 | `useResource(id)` | Obtener un recurso por ID |
 | `useCreateResource()` | Mutation para crear recurso |
 | `useUpdateResource()` | Mutation para actualizar recurso |
 | `useDeleteResource()` | Mutation para eliminar recurso |
 | `useReservations(filters)` | Listar reservas del usuario |
-| `useAllReservations(filters)` | Listar todas las reservas (Admin) |
+| `useAdminReservations(filters)` | Listar todas las reservas (Admin) |
 | `useReservation(id)` | Obtener reserva por ID |
 | `useCreateReservation()` | Mutation para crear reserva |
 | `useCancelReservation()` | Mutation para cancelar reserva |
 | `useUpdateReservationStatus()` | Mutation para cambiar estado (Admin) |
 | `useCheckAvailability(params)` | Verificar disponibilidad |
 | `useResourceSlots(resourceId, date)` | Slots ocupados por día |
+| `useCreatePaymentIntent()` | Mutation para crear Payment Intent |
 | `useDashboardStats()` | Estadísticas del dashboard (Admin) |
+| `useRevenueByPeriod(period, months)` | Revenue agrupado por período |
+| `useTopResources(limit)` | Recursos más reservados |
+| `useReservationTrends(days)` | Tendencia de reservas |
 | `useUsers(page, limit)` | Listar usuarios (Admin) |
+| `useUpdateUser()` | Mutation para actualizar usuario (Admin) |
 | `useUpdateProfile()` | Mutation para actualizar perfil |
 | `useSchedules(resourceId)` | Horarios de un recurso |
 | `useCreateSchedule()` | Mutation para crear horario |
 | `useDeleteSchedule()` | Mutation para eliminar horario |
+| `useResourceReviews(resourceId, page)` | Reseñas de un recurso (público) |
 
 ### Componentes UI
 
@@ -422,10 +485,12 @@ Swagger Docs: `http://localhost:3001/api/docs`
 | `Input` / `Select` / `Textarea` | `ui/form-fields.tsx` | Campos de formulario con labels y errores |
 | `LoadingSpinner` / `FullPageLoader` | `ui/loading-spinner.tsx` | Spinners de carga |
 | `EmptyState` / `Pagination` | `ui/empty-and-pagination.tsx` | Estado vacío con icono/acción + paginación |
-| `Sidebar` | `layout/sidebar.tsx` | Sidebar fijo con avatar, nav links, Material Icons |
-| `Navbar` | `layout/navbar.tsx` | Header con breadcrumb, search, notificaciones |
+| `Sidebar` | `layout/sidebar.tsx` | Sidebar fijo con avatar, nav links, Heroicons |
+| `Navbar` | `layout/navbar.tsx` | Header con breadcrumb, notificaciones |
+| `PublicNavbar` | `layout/public-navbar.tsx` | Navbar para páginas públicas con acciones auth-aware |
 | `ResourceCard` | `domain/resource-card.tsx` | Card de recurso con imagen, precio, tipo, capacidad |
 | `ReservationCard` | `domain/resource-card.tsx` | Card de reserva con fecha, status, monto |
+| `Charts` | `domain/charts.tsx` | Componentes de gráficos Recharts para estadísticas |
 
 ---
 
