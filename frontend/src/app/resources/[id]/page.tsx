@@ -1,48 +1,94 @@
 'use client';
 
 import { useState } from 'react';
+import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
-import { useResource, useResourceSlots, useCreateReservation, useResourceReviews } from '@/hooks/use-api';
-import { useAuth } from '@/contexts/auth-context';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/form-fields';
-import { LoadingSpinner, FullPageLoader } from '@/components/ui/loading-spinner';
-import { formatCurrency, getResourceTypeLabel, getResourceTypeEmoji } from '@/lib/utils';
+import { FullPageLoader, LoadingSpinner } from '@/components/ui/loading-spinner';
+import { useAuth } from '@/contexts/auth-context';
 import {
-  MapPinIcon,
-  UserGroupIcon,
-  ClockIcon,
+  useCreateReservation,
+  useResource,
+  useResourceReviews,
+  useResourceSlots,
+} from '@/hooks/use-api';
+import type { ResourceType } from '@/lib/types';
+import { cn, formatCurrency, getResourceTypeEmoji, getResourceTypeLabel } from '@/lib/utils';
+import {
   ArrowLeftIcon,
+  BriefcaseIcon,
+  CalendarDaysIcon,
+  CheckBadgeIcon,
+  ClockIcon,
+  MapPinIcon,
+  SparklesIcon,
+  UserGroupIcon,
   WifiIcon,
   ComputerDesktopIcon,
-  SparklesIcon,
   PrinterIcon,
+  BuildingOffice2Icon,
 } from '@heroicons/react/24/outline';
-import {
-  StarIcon,
-  CheckBadgeIcon,
-  ShieldCheckIcon,
-} from '@heroicons/react/24/solid';
-import Link from 'next/link';
+import { ShieldCheckIcon, StarIcon } from '@heroicons/react/24/solid';
 
-/* ─── Amenity map for resource types ─── */
 const AMENITY_ICONS: Record<string, { icon: typeof WifiIcon; label: string }[]> = {
-  MEETING_ROOM: [
+  ROOM: [
     { icon: WifiIcon, label: 'WiFi de alta velocidad' },
-    { icon: ComputerDesktopIcon, label: 'Proyector 4K' },
-    { icon: SparklesIcon, label: 'Climatización' },
-    { icon: PrinterIcon, label: 'Impresión' },
+    { icon: ComputerDesktopIcon, label: 'Pantalla para presentaciones' },
+    { icon: SparklesIcon, label: 'Ambiente climatizado' },
+    { icon: PrinterIcon, label: 'Soporte operativo' },
   ],
   DESK: [
-    { icon: WifiIcon, label: 'WiFi dedicado' },
-    { icon: ComputerDesktopIcon, label: 'Monitor externo' },
-    { icon: SparklesIcon, label: 'Ergonómico' },
+    { icon: WifiIcon, label: 'Conexion dedicada' },
+    { icon: ComputerDesktopIcon, label: 'Area lista para trabajar' },
+    { icon: SparklesIcon, label: 'Mobiliario ergonomico' },
+  ],
+  COURT: [
+    { icon: SparklesIcon, label: 'Mantenimiento continuo' },
+    { icon: ClockIcon, label: 'Bloques por hora' },
+    { icon: ShieldCheckIcon, label: 'Acceso controlado' },
   ],
   DEFAULT: [
-    { icon: WifiIcon, label: 'WiFi incluido' },
-    { icon: SparklesIcon, label: 'Limpieza' },
+    { icon: WifiIcon, label: 'Conectividad incluida' },
+    { icon: SparklesIcon, label: 'Mantenimiento frecuente' },
+    { icon: ShieldCheckIcon, label: 'Operacion verificada' },
   ],
 };
+
+const DAYS_OF_WEEK = [
+  'SUNDAY',
+  'MONDAY',
+  'TUESDAY',
+  'WEDNESDAY',
+  'THURSDAY',
+  'FRIDAY',
+  'SATURDAY',
+] as const;
+
+const SNAPSHOT_ICONS: Record<ResourceType, typeof BuildingOffice2Icon> = {
+  COURT: SparklesIcon,
+  ROOM: BuildingOffice2Icon,
+  TABLE: UserGroupIcon,
+  DESK: ComputerDesktopIcon,
+  EQUIPMENT: BriefcaseIcon,
+  OTHER: CheckBadgeIcon,
+};
+
+function formatSlotLabel(value: string) {
+  return new Date(value).toLocaleTimeString('es-DO', {
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+}
+
+function formatHumanDate(value: string) {
+  return new Date(`${value}T12:00:00`).toLocaleDateString('es-DO', {
+    weekday: 'short',
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+  });
+}
 
 export default function ResourceDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -52,10 +98,10 @@ export default function ResourceDetailPage() {
   const { data: reviewsData } = useResourceReviews(id);
 
   const [selectedDate, setSelectedDate] = useState(() => {
-    const d = new Date();
-    const year = d.getFullYear();
-    const month = String(d.getMonth() + 1).padStart(2, '0');
-    const day = String(d.getDate()).padStart(2, '0');
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const day = String(now.getDate()).padStart(2, '0');
     return `${year}-${month}-${day}`;
   });
   const [selectedSlot, setSelectedSlot] = useState<{ start: string; end: string } | null>(null);
@@ -65,32 +111,47 @@ export default function ResourceDetailPage() {
   const createReservation = useCreateReservation();
 
   if (isLoading) return <FullPageLoader />;
-  if (!resource) return <div className="text-center py-12 text-[var(--on-surface-variant)]">Recurso no encontrado</div>;
-
-  const DAYS_OF_WEEK = ['SUNDAY', 'MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY'] as const;
-  const selectedDayOfWeek = DAYS_OF_WEEK[new Date(selectedDate + 'T12:00:00').getDay()];
-  const todaySchedule = resource.schedules?.find((s) => s.dayOfWeek === selectedDayOfWeek && s.isActive);
-
-  const startHour = todaySchedule ? parseInt(todaySchedule.startTime.split(':')[0]) : 8;
-  const endHour = todaySchedule ? parseInt(todaySchedule.endTime.split(':')[0]) : 22;
-  const generatedSlots = Array.from({ length: Math.max(0, endHour - startHour) }, (_, i) => {
-    const h = startHour + i;
-    const slotStart = new Date(`${selectedDate}T00:00:00`);
-    slotStart.setHours(h, 0, 0, 0);
-    const slotEnd = new Date(`${selectedDate}T00:00:00`);
-    slotEnd.setHours(h + 1, 0, 0, 0);
-    const isBooked = (bookedSlots ?? []).some(
-      (b) => new Date(b.startTime) < slotEnd && new Date(b.endTime) > slotStart,
+  if (!resource) {
+    return (
+      <div className="py-16 text-center text-sm text-[var(--on-surface-variant)]">
+        Recurso no encontrado.
+      </div>
     );
-    return { startTime: slotStart.toISOString(), endTime: slotEnd.toISOString(), available: !isBooked };
+  }
+
+  const selectedDayOfWeek = DAYS_OF_WEEK[new Date(`${selectedDate}T12:00:00`).getDay()];
+  const todaySchedule = resource.schedules?.find(
+    (schedule) => schedule.dayOfWeek === selectedDayOfWeek && schedule.isActive,
+  );
+
+  const startHour = todaySchedule ? parseInt(todaySchedule.startTime.split(':')[0], 10) : 8;
+  const endHour = todaySchedule ? parseInt(todaySchedule.endTime.split(':')[0], 10) : 22;
+  const generatedSlots = Array.from({ length: Math.max(0, endHour - startHour) }, (_, index) => {
+    const hour = startHour + index;
+    const slotStart = new Date(`${selectedDate}T00:00:00`);
+    slotStart.setHours(hour, 0, 0, 0);
+    const slotEnd = new Date(`${selectedDate}T00:00:00`);
+    slotEnd.setHours(hour + 1, 0, 0, 0);
+    const isBooked = (bookedSlots ?? []).some(
+      (bookedSlot) =>
+        new Date(bookedSlot.startTime) < slotEnd && new Date(bookedSlot.endTime) > slotStart,
+    );
+
+    return {
+      startTime: slotStart.toISOString(),
+      endTime: slotEnd.toISOString(),
+      available: !isBooked,
+    };
   });
 
   const handleReserve = async () => {
     if (!selectedSlot) return;
+
     if (!user) {
       router.push(`/login?from=/resources/${id}`);
       return;
     }
+
     try {
       await createReservation.mutateAsync({
         resourceId: id,
@@ -100,204 +161,280 @@ export default function ResourceDetailPage() {
       });
       router.push('/reservations');
     } catch {
-      // error handled by hook
+      // handled by mutation hook
     }
   };
 
   const avgRating = resource.avgRating ?? reviewsData?.avgRating ?? 0;
   const reviewCount = resource.reviewCount ?? resource._count?.reviews ?? reviewsData?.total ?? 0;
-  const amenities = AMENITY_ICONS[resource.type] || AMENITY_ICONS.DEFAULT;
+  const amenities = resource.amenities?.length
+    ? resource.amenities.map((label, index) => ({
+        icon: AMENITY_ICONS[resource.type]?.[index % (AMENITY_ICONS[resource.type]?.length || 1)]?.icon || WifiIcon,
+        label,
+      }))
+    : AMENITY_ICONS[resource.type] || AMENITY_ICONS.DEFAULT;
 
-  // Build rating distribution for the bar chart
-  const ratingDistribution = [0, 0, 0, 0, 0]; // indices 0-4 = stars 1-5
-  reviewsData?.reviews?.forEach((r) => {
-    if (r.rating >= 1 && r.rating <= 5) ratingDistribution[r.rating - 1]++;
+  const ratingDistribution = [0, 0, 0, 0, 0];
+  reviewsData?.reviews?.forEach((review) => {
+    if (review.rating >= 1 && review.rating <= 5) {
+      ratingDistribution[review.rating - 1] += 1;
+    }
   });
   const maxRatingCount = Math.max(...ratingDistribution, 1);
 
-  // Total estimated cost
   const estimatedTotal = selectedSlot
     ? (resource.pricePerHour *
         (new Date(selectedSlot.end).getTime() - new Date(selectedSlot.start).getTime())) /
       3600000
     : 0;
   const serviceFee = estimatedTotal * 0.1;
+  const hostName = resource.owner?.partnerProfile?.businessName || resource.owner?.fullName || 'Socio';
 
   return (
-    <div className="space-y-0 animate-fade-in">
-      {/* ── Back navigation ── */}
-      <div className="mb-6">
+    <div className="space-y-10 pb-12">
+      <div className="space-y-5">
         <Link
           href="/resources"
-          className="inline-flex items-center gap-1.5 text-sm text-[var(--on-surface-variant)] hover:text-[var(--on-surface)] transition-colors font-bold"
+          className="inline-flex items-center gap-2 text-sm font-semibold text-[var(--on-surface-variant)] transition-colors hover:text-[var(--primary)]"
         >
           <ArrowLeftIcon className="h-4 w-4" />
-          Volver a Recursos
+          Volver a recursos
         </Link>
-      </div>
 
-      {/* ══════════ HERO SECTION ══════════ */}
-      <div className="relative w-full h-[420px] lg:h-[500px] rounded-3xl overflow-hidden mb-12 shadow-[var(--shadow-xl)]">
-        {resource.imageUrl ? (
-          <img
-            src={resource.imageUrl}
-            alt={resource.name}
-            className="w-full h-full object-cover"
-          />
-        ) : (
-          <div className="w-full h-full bg-gradient-to-br from-[var(--primary-fixed)] via-[var(--surface-container)] to-[var(--tertiary-fixed)] flex items-center justify-center">
-            <span className="text-[120px] drop-shadow-lg">{getResourceTypeEmoji(resource.type)}</span>
-          </div>
-        )}
-        {/* Gradient overlay */}
-        <div className="absolute inset-0 bg-gradient-to-t from-[var(--on-background)]/60 via-transparent to-transparent flex items-end p-8 lg:p-12">
-          <div>
-            <span className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-[var(--tertiary)] text-white text-xs font-bold uppercase tracking-widest mb-4">
-              <SparklesIcon className="h-3.5 w-3.5" />
-              {getResourceTypeLabel(resource.type)}
-            </span>
-            <h1 className="text-3xl lg:text-5xl font-extrabold text-white tracking-tighter leading-none mb-3">
-              {resource.name}
-            </h1>
+        <div className="flex flex-wrap items-center gap-2 text-xs uppercase tracking-[0.2em] text-[var(--outline)]">
+          <Link href="/resources" className="transition-colors hover:text-[var(--primary)]">
+            Recursos
+          </Link>
+          <span>/</span>
+          <span>{getResourceTypeLabel(resource.type)}</span>
+          <span>/</span>
+          <span className="text-[var(--on-surface)]">{resource.name}</span>
+        </div>
+
+        <div className="space-y-4">
+          <h1 className="max-w-4xl font-[family-name:var(--font-manrope)] text-4xl font-extrabold tracking-[-0.04em] text-[var(--on-surface)] md:text-6xl">
+            {resource.name}
+          </h1>
+
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-[var(--on-surface-variant)]">
+            {avgRating > 0 && (
+              <div className="flex items-center gap-1.5">
+                <StarIcon className="h-4 w-4 text-[var(--tertiary)]" />
+                <span className="font-semibold text-[var(--on-surface)]">{avgRating.toFixed(1)}</span>
+                <span>({reviewCount} resenas)</span>
+              </div>
+            )}
+
             {resource.location && (
-              <p className="text-white/80 flex items-center gap-2 font-medium">
-                <MapPinIcon className="h-5 w-5 text-white" />
-                {resource.location}
-              </p>
+              <div className="flex items-center gap-1.5">
+                <MapPinIcon className="h-4 w-4" />
+                <span>{resource.location}</span>
+              </div>
+            )}
+
+            {resource.capacity > 0 && (
+              <div className="flex items-center gap-1.5">
+                <UserGroupIcon className="h-4 w-4" />
+                <span>Hasta {resource.capacity} personas</span>
+              </div>
             )}
           </div>
         </div>
       </div>
 
-      {/* ══════════ TWO-COLUMN LAYOUT ══════════ */}
-      <div className="grid grid-cols-1 lg:grid-cols-10 gap-12 items-start">
-
-        {/* ── LEFT COLUMN (70%) ── */}
-        <div className="lg:col-span-7 space-y-12">
-
-          {/* ─── About Section ─── */}
-          <section className="space-y-6">
-            <div className="flex items-center justify-between">
-              <h2 className="text-2xl lg:text-3xl font-extrabold tracking-tight text-[var(--primary)]">
-                Sobre este espacio
-              </h2>
-              {avgRating > 0 && (
-                <div className="flex items-center gap-1.5 text-[var(--on-surface-variant)] font-semibold">
-                  <StarIcon className="h-5 w-5 text-[var(--secondary)]" />
-                  <span>{avgRating.toFixed(1)}</span>
-                  <span className="text-[var(--outline)] text-sm font-normal">
-                    ({reviewCount} {reviewCount === 1 ? 'reseña' : 'reseñas'})
-                  </span>
-                </div>
-              )}
+      <section className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+        <div className="relative overflow-hidden rounded-[2rem] bg-[var(--surface-container-high)] lg:col-span-2">
+          {resource.imageUrl ? (
+            <img
+              src={resource.imageUrl}
+              alt={resource.name}
+              className="h-[360px] w-full object-cover md:h-[520px]"
+            />
+          ) : (
+            <div className="flex h-[360px] items-center justify-center bg-gradient-to-br from-[var(--primary)] to-[var(--primary-container)] md:h-[520px]">
+              <span className="text-8xl">{getResourceTypeEmoji(resource.type)}</span>
             </div>
-            <p className="text-[var(--on-surface-variant)] leading-relaxed text-lg">
-              {resource.description || 'Un espacio cuidadosamente diseñado para ofrecer la mejor experiencia. Reserva ahora y descubre todo lo que tiene para ofrecer.'}
-            </p>
+          )}
+          <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-[var(--on-background)]/80 via-[var(--on-background)]/25 to-transparent p-6 md:p-8">
+            <div className="inline-flex items-center gap-2 rounded-full bg-white/14 px-4 py-2 text-xs font-semibold uppercase tracking-[0.18em] text-white backdrop-blur-md">
+              <SparklesIcon className="h-4 w-4" />
+              Curado para reservas premium
+            </div>
+          </div>
+        </div>
 
-            {/* Meta tags */}
-            <div className="flex flex-wrap gap-4 text-sm text-[var(--on-surface-variant)]">
-              {resource.capacity && (
-                <span className="flex items-center gap-1.5">
-                  <UserGroupIcon className="h-4 w-4 text-[var(--primary)]" />
-                  Capacidad: {resource.capacity} personas
-                </span>
-              )}
-              {resource.isActive && (
-                <span className="inline-flex items-center gap-1.5 text-[var(--secondary)] font-semibold">
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-1">
+          <div className="rounded-[2rem] bg-[var(--surface-container-low)] p-6">
+            <div className="mb-6 flex items-center justify-between">
+              <span className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--outline)]">
+                Snapshot
+              </span>
+              {(() => {
+                const SnapshotIcon = SNAPSHOT_ICONS[resource.type] || CheckBadgeIcon;
+                return <SnapshotIcon className="h-12 w-12 text-[var(--primary)]" />;
+              })()}
+            </div>
+
+            <div className="space-y-4">
+              <div>
+                <p className="text-sm text-[var(--on-surface-variant)]">Categoria</p>
+                <p className="text-xl font-bold text-[var(--on-surface)]">
+                  {getResourceTypeLabel(resource.type)}
+                </p>
+              </div>
+
+              <div>
+                <p className="text-sm text-[var(--on-surface-variant)]">Estado</p>
+                <p className="inline-flex items-center gap-2 text-sm font-semibold text-[var(--secondary)]">
                   <ShieldCheckIcon className="h-4 w-4" />
-                  Disponible
-                </span>
-              )}
+                  {resource.isActive ? 'Disponible para reservar' : 'Temporalmente inactivo'}
+                </p>
+              </div>
+
+              <div>
+                <p className="text-sm text-[var(--on-surface-variant)]">Horario del dia</p>
+                <p className="text-sm font-semibold text-[var(--on-surface)]">
+                  {todaySchedule
+                    ? `${todaySchedule.startTime.slice(0, 5)} - ${todaySchedule.endTime.slice(0, 5)}`
+                    : 'Sin horario configurado'}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div className="rounded-[2rem] bg-[var(--surface-container-lowest)] p-6 shadow-[0_16px_40px_rgba(11,28,48,0.06)]">
+            <div className="mb-4 flex items-center gap-4">
+              <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-[var(--primary)] to-[var(--primary-container)] text-lg font-bold text-white">
+                {hostName[0]}
+              </div>
+              <div>
+                <p className="text-sm text-[var(--on-surface-variant)]">Operado por</p>
+                <p className="font-bold text-[var(--on-surface)]">{hostName}</p>
+              </div>
+            </div>
+
+            <div className="space-y-2 text-sm text-[var(--on-surface-variant)]">
+              <p className="inline-flex items-center gap-2 font-medium text-[var(--on-surface)]">
+                <CheckBadgeIcon className="h-5 w-5 text-[var(--tertiary)]" />
+                Perfil verificado
+              </p>
+              <p>Respuesta prioritaria y soporte para coordinacion de reservas.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <div className="flex flex-col gap-10 lg:flex-row lg:items-start">
+        <div className="min-w-0 flex-1 space-y-10">
+          <section className="rounded-[2rem] bg-[var(--surface-container-low)] p-8 md:p-10">
+            <h2 className="mb-4 font-[family-name:var(--font-manrope)] text-2xl font-bold text-[var(--on-surface)] md:text-3xl">
+              Sobre este espacio
+            </h2>
+            <div className="space-y-4 text-[15px] leading-8 text-[var(--on-surface-variant)]">
+              <p>
+                {resource.description ||
+                  'Este recurso fue preparado para ofrecer una experiencia clara, eficiente y lista para recibir reservas con una operacion confiable.'}
+              </p>
+              <p>
+                La composicion sigue una experiencia mas editorial: informacion directa, capas tonales y una lectura rapida para decidir disponibilidad y reservar.
+              </p>
             </div>
           </section>
 
-          {/* ─── Amenities ─── */}
-          <section className="space-y-6">
-            <h3 className="text-xl font-bold text-[var(--on-background)]">Comodidades</h3>
+          <section className="space-y-5">
+            <div className="flex items-center justify-between gap-4">
+              <h2 className="font-[family-name:var(--font-manrope)] text-2xl font-bold text-[var(--on-surface)]">
+                Premium amenities
+              </h2>
+              <span className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--outline)]">
+                Sin separadores rigidos
+              </span>
+            </div>
+
             <div className="flex flex-wrap gap-3">
-              {amenities.map((amenity, i) => {
+              {amenities.map((amenity, index) => {
                 const Icon = amenity.icon;
                 return (
                   <div
-                    key={i}
-                    className="flex items-center gap-3 px-5 py-3 rounded-xl bg-[var(--surface-container-low)] border border-transparent hover:border-[var(--primary-container)] transition-all group cursor-default"
+                    key={`${amenity.label}-${index}`}
+                    className="inline-flex items-center gap-3 rounded-2xl bg-[var(--surface-container-high)] px-4 py-3 text-sm font-medium text-[var(--on-surface)]"
                   >
-                    <Icon className="h-5 w-5 text-[var(--primary)] group-hover:scale-110 transition-transform" />
-                    <span className="font-semibold text-[var(--on-surface-variant)]">{amenity.label}</span>
+                    <Icon className="h-5 w-5 text-[var(--primary)]" />
+                    <span>{amenity.label}</span>
                   </div>
                 );
               })}
             </div>
           </section>
 
-          {/* ─── Partner Card ─── */}
           {resource.owner && (
-            <section className="p-8 bg-[var(--surface-container-low)] rounded-3xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6">
-              <div className="flex items-center gap-6">
-                <div className="relative flex-shrink-0">
-                  <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-[var(--primary)] to-[var(--primary-container)] flex items-center justify-center text-white font-bold text-2xl shadow-lg">
-                    {resource.owner.fullName?.[0] || 'S'}
-                  </div>
-                  <div className="absolute -bottom-2 -right-2 bg-[var(--secondary)] text-white p-1 rounded-lg">
-                    <CheckBadgeIcon className="h-4 w-4" />
-                  </div>
+            <section className="rounded-[2rem] bg-[var(--surface-container-lowest)] p-8 shadow-[0_20px_40px_rgba(11,28,48,0.06)]">
+              <div className="flex flex-col gap-6 md:flex-row md:items-start">
+                <div className="flex h-20 w-20 items-center justify-center rounded-full bg-gradient-to-br from-[var(--primary-fixed)] to-[var(--primary-fixed-dim)] text-2xl font-bold text-[var(--on-primary-fixed)]">
+                  {hostName[0]}
                 </div>
-                <div>
-                  <h4 className="text-xl font-bold text-[var(--on-background)]">
-                    {resource.owner.partnerProfile?.businessName || resource.owner.fullName}
-                  </h4>
-                  <p className="text-[var(--on-surface-variant)] font-medium">Socio Verificado</p>
-                  <div className="flex items-center gap-4 mt-2">
-                    <span className="text-xs font-bold text-[var(--secondary)] uppercase tracking-tighter">
-                      Respuesta Rápida
+
+                <div className="flex-1 space-y-4">
+                  <div>
+                    <h3 className="font-[family-name:var(--font-manrope)] text-2xl font-bold text-[var(--on-surface)]">
+                      {hostName}
+                    </h3>
+                    <p className="text-sm text-[var(--on-surface-variant)]">
+                      Socio verificado para reservas con coordinacion directa.
+                    </p>
+                  </div>
+
+                  <div className="flex flex-wrap gap-4 text-sm">
+                    <span className="inline-flex items-center gap-2 text-[var(--on-surface)]">
+                      <StarIcon className="h-4 w-4 text-[var(--tertiary)]" />
+                      {avgRating > 0 ? `${avgRating.toFixed(1)} de satisfaccion` : 'Calidad validada'}
                     </span>
-                    <span className="text-xs font-bold text-[var(--primary)] uppercase tracking-tighter">
-                      Socio Premium
+                    <span className="inline-flex items-center gap-2 text-[var(--on-surface-variant)]">
+                      <BuildingOffice2Icon className="h-4 w-4" />
+                      Operacion profesional
                     </span>
                   </div>
+
+                  <p className="max-w-2xl text-sm leading-7 text-[var(--on-surface-variant)]">
+                    Este socio administra el recurso con una logica de disponibilidad clara, respuesta rapida y una presentacion consistente con el flujo de reservas.
+                  </p>
+
+                  <Button variant="outline" size="md">
+                    Contactar socio
+                  </Button>
                 </div>
               </div>
-              <Button variant="outline" size="md">
-                Contactar Socio
-              </Button>
             </section>
           )}
 
-          {/* ─── Reviews Section ─── */}
           {reviewCount > 0 && (
-            <section className="space-y-8">
-              {/* Rating summary with bars */}
-              <div className="flex items-end gap-12">
-                <div className="text-center">
-                  <span className="text-6xl font-black text-[var(--primary)] leading-none tracking-tighter">
-                    {avgRating.toFixed(1)}
-                  </span>
-                  <div className="flex justify-center gap-0.5 mt-2">
-                    {Array.from({ length: 5 }).map((_, i) => (
-                      <StarIcon
-                        key={i}
-                        className={`h-4 w-4 ${i < Math.round(avgRating) ? 'text-[var(--secondary)]' : 'text-gray-300'}`}
-                      />
-                    ))}
-                  </div>
-                  <p className="text-[var(--outline)] text-xs font-bold mt-2 uppercase">
-                    {reviewCount} Opiniones
+            <section className="space-y-6">
+              <div className="flex flex-col gap-6 rounded-[2rem] bg-[var(--surface-container-low)] p-8 md:flex-row md:items-end md:justify-between">
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--outline)]">
+                    Valoracion
                   </p>
+                  <div className="mt-3 flex items-end gap-3">
+                    <span className="font-[family-name:var(--font-manrope)] text-6xl font-extrabold tracking-[-0.05em] text-[var(--primary)]">
+                      {avgRating.toFixed(1)}
+                    </span>
+                    <span className="pb-2 text-sm text-[var(--on-surface-variant)]">
+                      {reviewCount} resenas verificadas
+                    </span>
+                  </div>
                 </div>
 
-                {/* Distribution bars */}
-                <div className="flex-1 space-y-2">
+                <div className="w-full max-w-xl space-y-2">
                   {[5, 4, 3, 2, 1].map((star) => {
                     const count = ratingDistribution[star - 1];
-                    const pct = maxRatingCount > 0 ? (count / maxRatingCount) * 100 : 0;
+                    const width = maxRatingCount > 0 ? (count / maxRatingCount) * 100 : 0;
                     return (
-                      <div key={star} className="flex items-center gap-4">
-                        <span className="text-xs font-bold w-4">{star}</span>
-                        <div className="h-2 flex-1 bg-[var(--surface-container)] rounded-full overflow-hidden">
+                      <div key={star} className="flex items-center gap-3">
+                        <span className="w-4 text-xs font-semibold text-[var(--on-surface)]">{star}</span>
+                        <div className="h-2 flex-1 rounded-full bg-[var(--surface-container-high)]">
                           <div
-                            className="h-full bg-[var(--secondary)] rounded-full transition-all duration-500"
-                            style={{ width: `${pct}%` }}
+                            className="h-2 rounded-full bg-[var(--secondary)]"
+                            style={{ width: `${width}%` }}
                           />
                         </div>
                       </div>
@@ -306,24 +443,23 @@ export default function ResourceDetailPage() {
                 </div>
               </div>
 
-              {/* Individual reviews */}
               <div className="space-y-4">
                 {reviewsData?.reviews?.map((review) => (
-                  <div
+                  <article
                     key={review.id}
-                    className="p-6 bg-[var(--surface-container-lowest)] rounded-2xl shadow-[var(--shadow-xs)] border border-[var(--surface-container)]"
+                    className="rounded-[1.5rem] bg-[var(--surface-container-lowest)] p-6 shadow-[0_14px_34px_rgba(11,28,48,0.05)]"
                   >
-                    <div className="flex items-center justify-between mb-4">
+                    <div className="mb-4 flex items-start justify-between gap-4">
                       <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[var(--primary-fixed-dim)] to-[var(--primary-fixed)] flex items-center justify-center text-sm font-bold text-[var(--on-primary-fixed)]">
+                        <div className="flex h-11 w-11 items-center justify-center rounded-full bg-[var(--surface-container-high)] font-semibold text-[var(--primary)]">
                           {review.user?.fullName?.[0] || 'U'}
                         </div>
                         <div>
-                          <p className="font-bold text-sm text-[var(--on-surface)]">
+                          <p className="font-semibold text-[var(--on-surface)]">
                             {review.user?.fullName || 'Usuario'}
                           </p>
-                          <p className="text-[var(--outline)] text-xs">
-                            {new Date(review.createdAt).toLocaleDateString('es-ES', {
+                          <p className="text-xs text-[var(--outline)]">
+                            {new Date(review.createdAt).toLocaleDateString('es-DO', {
                               year: 'numeric',
                               month: 'short',
                               day: 'numeric',
@@ -331,166 +467,168 @@ export default function ResourceDetailPage() {
                           </p>
                         </div>
                       </div>
-                      <div className="flex gap-0.5">
-                        {Array.from({ length: 5 }).map((_, i) => (
+
+                      <div className="flex items-center gap-1">
+                        {Array.from({ length: 5 }).map((_, index) => (
                           <StarIcon
-                            key={i}
-                            className={`h-3.5 w-3.5 ${i < review.rating ? 'text-[var(--secondary)]' : 'text-gray-300'}`}
+                            key={index}
+                            className={cn(
+                              'h-4 w-4',
+                              index < review.rating ? 'text-[var(--tertiary)]' : 'text-slate-300',
+                            )}
                           />
                         ))}
                       </div>
                     </div>
+
                     {review.comment && (
-                      <p className="text-[var(--on-surface-variant)] italic leading-relaxed">
+                      <p className="text-sm leading-7 text-[var(--on-surface-variant)]">
                         &ldquo;{review.comment}&rdquo;
                       </p>
                     )}
-                  </div>
+                  </article>
                 ))}
               </div>
             </section>
           )}
         </div>
 
-        {/* ── RIGHT COLUMN (30% - Sticky Booking Panel) ── */}
-        <aside className="lg:col-span-3 lg:sticky lg:top-24">
-          <div className="bg-[var(--surface-container-lowest)] rounded-3xl p-8 shadow-[var(--shadow-xl)] border border-[var(--surface-container-high)]">
-
-            {/* Price header */}
-            <div className="flex items-baseline justify-between mb-8">
-              <span className="text-2xl font-black text-[var(--primary)]">
-                {formatCurrency(resource.pricePerHour)}
-              </span>
-              <span className="text-[var(--on-surface-variant)] text-sm font-semibold uppercase tracking-widest">
-                / hora
-              </span>
-            </div>
-
-            {/* Date picker */}
-            <div className="mb-6">
-              <p className="font-bold text-sm mb-3 text-[var(--on-surface)]">Selecciona fecha</p>
-              <input
-                type="date"
-                value={selectedDate}
-                min={new Date().toISOString().split('T')[0]}
-                onChange={(e) => {
-                  setSelectedDate(e.target.value);
-                  setSelectedSlot(null);
-                }}
-                className="w-full px-4 py-3 rounded-xl bg-[var(--surface-container-low)] border border-[var(--outline-variant)] text-[var(--on-surface)] focus:outline-none focus:ring-2 focus:ring-[var(--primary)] focus:border-transparent transition-all text-sm font-medium"
-              />
-            </div>
-
-            {/* Time slots */}
-            <div className="space-y-3 mb-8">
-              <p className="font-bold text-sm text-[var(--on-surface)]">Horarios Disponibles</p>
-              {slotsLoading ? (
-                <div className="flex justify-center py-4">
-                  <LoadingSpinner size="sm" />
+        <aside className="w-full lg:max-w-[360px] lg:shrink-0">
+          <div className="lg:sticky lg:top-24">
+            <div className="rounded-[2rem] bg-[var(--surface-container-lowest)] p-6 shadow-[0_24px_50px_rgba(11,28,48,0.08)]">
+              <div className="mb-6 border-b border-[color:rgba(196,197,213,0.35)] pb-5">
+                <div className="flex items-end gap-2">
+                  <span className="font-[family-name:var(--font-manrope)] text-4xl font-extrabold tracking-[-0.04em] text-[var(--on-surface)]">
+                    {formatCurrency(resource.pricePerHour)}
+                  </span>
+                  <span className="pb-1 text-sm text-[var(--on-surface-variant)]">/ hora</span>
                 </div>
-              ) : generatedSlots.length === 0 ? (
-                <p className="text-sm text-[var(--on-surface-variant)] py-4 text-center">
-                  No hay horarios disponibles para esta fecha
+              </div>
+
+              <div className="space-y-5">
+                <div className="rounded-2xl bg-[var(--surface-container-low)] p-4">
+                  <div className="mb-2 flex items-center justify-between text-sm">
+                    <span className="font-medium text-[var(--on-surface)]">Selecciona fecha</span>
+                    <CalendarDaysIcon className="h-5 w-5 text-[var(--on-surface-variant)]" />
+                  </div>
+                  <input
+                    type="date"
+                    value={selectedDate}
+                    min={new Date().toISOString().split('T')[0]}
+                    onChange={(event) => {
+                      setSelectedDate(event.target.value);
+                      setSelectedSlot(null);
+                    }}
+                    className="w-full rounded-xl bg-white px-4 py-3 text-sm font-medium text-[var(--on-surface)] outline-none ring-0"
+                  />
+                  <p className="mt-2 text-xs text-[var(--on-surface-variant)]">{formatHumanDate(selectedDate)}</p>
+                </div>
+
+                <div>
+                  <div className="mb-3 flex items-center justify-between">
+                    <h3 className="text-sm font-semibold text-[var(--on-surface)]">Selecciona horario</h3>
+                    <span className="text-xs text-[var(--on-surface-variant)]">Bloques de 1 hora</span>
+                  </div>
+
+                  {slotsLoading ? (
+                    <div className="flex justify-center py-8">
+                      <LoadingSpinner size="sm" />
+                    </div>
+                  ) : generatedSlots.length === 0 ? (
+                    <div className="rounded-2xl bg-[var(--surface-container-low)] px-4 py-5 text-sm text-[var(--on-surface-variant)]">
+                      No hay horarios disponibles para la fecha seleccionada.
+                    </div>
+                  ) : (
+                    <div className="grid max-h-64 grid-cols-2 gap-2 overflow-y-auto pr-1">
+                      {generatedSlots.map((slot) => {
+                        const isSelected =
+                          selectedSlot?.start === slot.startTime && selectedSlot?.end === slot.endTime;
+
+                        return (
+                          <button
+                            key={slot.startTime}
+                            type="button"
+                            disabled={!slot.available}
+                            onClick={() =>
+                              setSelectedSlot({
+                                start: slot.startTime,
+                                end: slot.endTime,
+                              })
+                            }
+                            className={cn(
+                              'rounded-xl px-3 py-3 text-left text-xs font-semibold transition-all',
+                              !slot.available &&
+                                'cursor-not-allowed bg-[var(--surface-container-low)] text-[var(--outline)] opacity-50 line-through',
+                              slot.available &&
+                                !isSelected &&
+                                'bg-[var(--surface-container-low)] text-[var(--on-surface)] hover:bg-[var(--surface-container-high)]',
+                              isSelected &&
+                                'bg-[var(--primary-fixed)] text-[var(--on-primary-fixed)] shadow-sm',
+                            )}
+                          >
+                            <div className="flex items-center gap-2">
+                              <ClockIcon className="h-3.5 w-3.5" />
+                              <span>{formatSlotLabel(slot.startTime)}</span>
+                            </div>
+                            <p className="mt-1 text-[11px] opacity-80">{formatSlotLabel(slot.endTime)}</p>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+
+                {user && (
+                  <Textarea
+                    label="Notas opcionales"
+                    placeholder="Agrega detalles para tu reserva..."
+                    value={notes}
+                    onChange={(event) => setNotes(event.target.value)}
+                  />
+                )}
+
+                {selectedSlot && (
+                  <div className="space-y-3 rounded-2xl bg-[var(--surface-container-low)] p-4 text-sm">
+                    <div className="flex items-center justify-between text-[var(--on-surface-variant)]">
+                      <span>Reserva ({formatSlotLabel(selectedSlot.start)} - {formatSlotLabel(selectedSlot.end)})</span>
+                      <span className="font-semibold text-[var(--on-surface)]">
+                        {formatCurrency(estimatedTotal)}
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between text-[var(--on-surface-variant)]">
+                      <span>Tarifa de servicio</span>
+                      <span className="font-semibold text-[var(--on-surface)]">
+                        {formatCurrency(serviceFee)}
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between border-t border-[color:rgba(196,197,213,0.35)] pt-3">
+                      <span className="font-semibold text-[var(--on-surface)]">Total</span>
+                      <span className="font-[family-name:var(--font-manrope)] text-xl font-extrabold text-[var(--primary)]">
+                        {formatCurrency(estimatedTotal + serviceFee)}
+                      </span>
+                    </div>
+                  </div>
+                )}
+
+                <Button
+                  onClick={handleReserve}
+                  disabled={!selectedSlot || createReservation.isPending}
+                  fullWidth
+                  size="lg"
+                  className="justify-center"
+                >
+                  {createReservation.isPending
+                    ? 'Procesando...'
+                    : user
+                      ? 'Solicitar reserva'
+                      : 'Inicia sesion para reservar'}
+                </Button>
+
+                <p className="text-center text-xs text-[var(--on-surface-variant)]">
+                  No se realiza cobro hasta confirmar la reserva.
                 </p>
-              ) : (
-                <div className="grid grid-cols-2 gap-2 max-h-48 overflow-y-auto pr-1">
-                  {generatedSlots.map((slot, i) => {
-                    const startStr = new Date(slot.startTime).toLocaleTimeString('es-ES', {
-                      hour: '2-digit',
-                      minute: '2-digit',
-                    });
-                    const endStr = new Date(slot.endTime).toLocaleTimeString('es-ES', {
-                      hour: '2-digit',
-                      minute: '2-digit',
-                    });
-                    const isSelected =
-                      selectedSlot?.start === slot.startTime &&
-                      selectedSlot?.end === slot.endTime;
-
-                    return (
-                      <button
-                        key={i}
-                        disabled={!slot.available}
-                        onClick={() =>
-                          setSelectedSlot({
-                            start: slot.startTime,
-                            end: slot.endTime,
-                          })
-                        }
-                        className={`py-2.5 px-4 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-                          !slot.available
-                            ? 'border border-[var(--outline-variant)] text-[var(--outline-variant)] opacity-40 cursor-not-allowed line-through'
-                            : isSelected
-                              ? 'bg-[var(--primary)] text-white border border-[var(--primary)] shadow-lg shadow-[var(--primary)]/20'
-                              : 'border border-[var(--outline-variant)] text-[var(--on-surface)] hover:border-[var(--primary)] hover:text-[var(--primary)]'
-                        }`}
-                      >
-                        <ClockIcon className="inline h-3 w-3 mr-1" />
-                        {startStr} – {endStr}
-                      </button>
-                    );
-                  })}
-                </div>
-              )}
+              </div>
             </div>
-
-            {/* Notes */}
-            {user && (
-              <div className="mb-6">
-                <Textarea
-                  label="Notas (opcional)"
-                  placeholder="Agrega comentarios sobre tu reserva..."
-                  value={notes}
-                  onChange={(e) => setNotes(e.target.value)}
-                />
-              </div>
-            )}
-
-            {/* Price breakdown */}
-            {selectedSlot && (
-              <div className="space-y-3 pt-6 border-t border-[var(--surface-container-high)] mb-8">
-                <div className="flex justify-between text-sm">
-                  <span className="text-[var(--on-surface-variant)]">
-                    Reserva (
-                    {Math.round(
-                      (new Date(selectedSlot.end).getTime() - new Date(selectedSlot.start).getTime()) /
-                        3600000,
-                    )}{' '}
-                    hora)
-                  </span>
-                  <span className="font-bold">{formatCurrency(estimatedTotal)}</span>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-[var(--on-surface-variant)]">Tarifa de Servicio</span>
-                  <span className="font-bold">{formatCurrency(serviceFee)}</span>
-                </div>
-                <div className="flex justify-between text-lg pt-3 border-t border-[var(--surface-container-high)]">
-                  <span className="font-extrabold text-[var(--primary)]">Total</span>
-                  <span className="font-black text-[var(--primary)]">
-                    {formatCurrency(estimatedTotal + serviceFee)}
-                  </span>
-                </div>
-              </div>
-            )}
-
-            {/* CTA Button */}
-            <button
-              onClick={handleReserve}
-              disabled={!selectedSlot || createReservation.isPending}
-              className="w-full py-5 bg-[var(--primary)] text-white rounded-2xl font-extrabold text-lg shadow-xl shadow-[var(--primary)]/30 hover:scale-[1.02] active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 cursor-pointer"
-            >
-              {createReservation.isPending ? (
-                <LoadingSpinner size="sm" />
-              ) : user ? (
-                'Reservar ahora'
-              ) : (
-                'Iniciar Sesión para Reservar'
-              )}
-            </button>
-
-            <p className="text-center text-[10px] text-[var(--outline)] font-bold uppercase tracking-widest mt-6">
-              Cancelación gratuita hasta 24h antes
-            </p>
           </div>
         </aside>
       </div>

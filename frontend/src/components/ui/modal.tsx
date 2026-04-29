@@ -48,23 +48,23 @@ export function Modal({ open, onClose, title, children, className, size = 'md' }
     >
       <div
         className={cn(
-          'w-full bg-[var(--bg-primary)] rounded-xl shadow-xl border border-[var(--border-primary)] animate-in zoom-in-95',
+          'w-full rounded-[1.75rem] border border-[var(--outline-variant)] bg-[var(--surface-container-lowest)] shadow-[0_24px_60px_rgba(11,28,48,0.14)] animate-in zoom-in-95',
           sizeStyles[size],
           className,
         )}
       >
         {title && (
-          <div className="flex items-center justify-between px-6 py-4 border-b border-[var(--border-primary)]">
-            <h2 className="text-lg font-semibold text-[var(--text-primary)]">{title}</h2>
+          <div className="flex items-center justify-between border-b border-[var(--outline-variant)] px-6 py-5">
+            <h2 className="text-[1.9rem] font-bold tracking-[-0.03em] text-[var(--on-surface)]">{title}</h2>
             <button
               onClick={onClose}
-              className="p-1 rounded-md hover:bg-[var(--bg-secondary)] text-[var(--text-secondary)] transition-colors cursor-pointer"
+              className="rounded-full p-2 text-[var(--on-surface)] transition-colors hover:bg-[var(--surface-container-low)] cursor-pointer"
             >
-              <XMarkIcon className="h-5 w-5" />
+              <XMarkIcon className="h-6 w-6" />
             </button>
           </div>
         )}
-        <div className="p-6">{children}</div>
+        <div className="p-6 text-[var(--on-surface)]">{children}</div>
       </div>
     </div>
   );

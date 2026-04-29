@@ -181,7 +181,7 @@ export function useCancelReservation() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (id: string) => {
-      const { data } = await api.patch(`/reservations/${id}/cancel`);
+      const { data } = await api.post(`/reservations/${id}/cancel`);
       return data;
     },
     onSuccess: () => {
